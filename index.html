@@ -14,18 +14,21 @@
 
     <style>
         :root {
-            --bg-main: #f4f6f9;
+            --bg-main: #f6f7f9;
             --bg-card: #ffffff;
             --primary: #0284c7;
             --primary-hover: #0369a1;
             --primary-light: #e0f2fe;
+            --brand-a: #38bdf8;
+            --brand-b: #0369a1;
             --text-main: #1e293b;
             --text-muted: #64748b;
-            --border-color: #e2e8f0;
+            --border-color: #e7eaf0;
             --admin-badge: #ef4444;
             --like-color: #16a34a;
             --dislike-color: #dc2626;
-            --shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+            --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 1px rgba(15, 23, 42, 0.03);
+            --avatar-colors: #0ea5e9, #f97316, #8b5cf6, #16a34a, #ef4444, #0d9488, #d946ef, #f59e0b, #64748b, #2563eb, #dc2626, #059669;
         }
 
         * {
@@ -62,15 +65,16 @@
         .sidebar-logo {
             width: 42px;
             height: 42px;
-            background: var(--primary);
+            background: linear-gradient(135deg, var(--brand-a), var(--brand-b));
             color: white;
-            border-radius: 12px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(3, 105, 161, 0.35);
         }
 
         .sidebar-icon {
@@ -184,6 +188,119 @@
             padding: 30px 10px;
         }
 
+        /* עמוד משתמשים (רשת, בסגנון NodeBB) */
+        .users-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .users-search-box {
+            position: relative;
+            flex: 1;
+            min-width: 220px;
+            max-width: 340px;
+        }
+
+        .users-search-box input {
+            width: 100%;
+            padding: 10px 14px 10px 14px;
+            padding-right: 38px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13.5px;
+            outline: none;
+        }
+
+        .users-search-box input:focus {
+            border-color: var(--primary);
+        }
+
+        .users-search-box i {
+            position: absolute;
+            right: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .users-sort-tabs {
+            display: flex;
+            gap: 6px;
+        }
+
+        .users-sort-tabs button {
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            cursor: pointer;
+        }
+
+        .users-sort-tabs button.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        .users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .user-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: transform 0.1s, border-color 0.2s;
+            min-width: 0;
+        }
+
+        .user-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .user-card-info {
+            min-width: 0;
+        }
+
+        .user-card-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-card-handle {
+            font-size: 11.5px;
+            color: var(--primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-card-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
         /* אזור תוכן מרכזי */
         .main-wrapper {
             margin-right: 70px;
@@ -210,9 +327,39 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--primary);
+        }
+
+        .brand-logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--brand-a), var(--brand-b));
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .brand-word {
+            font-size: 21px;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        .brand-word span {
+            background: linear-gradient(90deg, var(--brand-b), var(--brand-a));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .brand-tagline {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 1px;
         }
 
         .user-section {
@@ -1122,13 +1269,13 @@
 
     <!-- סרגל צדי צר בסגנון NodeBB -->
     <div class="sidebar">
-        <div class="sidebar-logo">NY</div>
+        <div class="sidebar-logo"><i class="fa-solid fa-diagram-project"></i></div>
         <a href="#" class="sidebar-icon active" id="nav-home" onclick="showHome(); return false;" title="דף הבית"><i class="fa-solid fa-house"></i></a>
         <a href="#" class="sidebar-icon" onclick="openNewTopicModal(); return false;" title="נושא חדש"><i class="fa-solid fa-pen-to-square"></i></a>
         <div class="sidebar-divider"></div>
         <a href="#" class="sidebar-icon" id="nav-latest" onclick="location.hash = '#latest'; return false;" title="נושאים אחרונים"><i class="fa-solid fa-clock"></i></a>
         <a href="#" class="sidebar-icon" id="nav-popular" onclick="location.hash = '#popular'; return false;" title="נושאים פופולריים"><i class="fa-solid fa-fire"></i></a>
-        <a href="#" class="sidebar-icon" id="nav-users" onclick="togglePanel('users'); return false;" title="משתמשים"><i class="fa-solid fa-users"></i></a>
+        <a href="#" class="sidebar-icon" id="nav-users" onclick="location.hash = '#users'; return false;" title="משתמשים"><i class="fa-solid fa-users"></i></a>
     </div>
 
     <!-- פאנל נגלל -->
@@ -1144,8 +1291,11 @@
         <!-- כותרת עליונה -->
         <header>
             <div class="header-title">
-                <i class="fa-solid fa-comments"></i>
-                <span>פורום נווה יעקב</span>
+                <div class="brand-logo-icon"><i class="fa-solid fa-people-group"></i></div>
+                <div>
+                    <div class="brand-word">פורום <span>נווה יעקב</span></div>
+                    <div class="brand-tagline">הקהילה הדיגיטלית של השכונה</div>
+                </div>
             </div>
             <div class="user-section">
                 <div id="g_id_onload"
@@ -1263,6 +1413,27 @@
                 </div>
                 <div id="popular-topics-container" class="topics-list">
                     <div class="loader"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>טוען נושאים...</div>
+                </div>
+            </div>
+
+            <!-- תצוגת משתמשים (עמוד מלא, רשת) -->
+            <div id="users-view" class="thread-view">
+                <button class="btn-secondary" onclick="showHome()" style="margin-bottom: 15px;">
+                    <i class="fa-solid fa-arrow-right"></i> חזרה לרשימת הנושאים
+                </button>
+                <h2 style="margin-bottom: 16px;"><i class="fa-solid fa-users"></i> משתמשים</h2>
+                <div class="users-toolbar">
+                    <div class="users-search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="users-search-input" placeholder="חיפוש משתמש..." oninput="renderUsersGrid()">
+                    </div>
+                    <div class="users-sort-tabs">
+                        <button id="users-sort-posts" class="active" onclick="setUsersSort('posts')">מפרסמים הכי הרבה</button>
+                        <button id="users-sort-name" onclick="setUsersSort('name')">לפי שם</button>
+                    </div>
+                </div>
+                <div id="users-grid-container" class="users-grid">
+                    <div class="loader"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>טוען משתמשים...</div>
                 </div>
             </div>
 
@@ -1482,6 +1653,28 @@
                 hash = hash & 0xffffffff;
             }
             return 'u' + Math.abs(hash).toString(36);
+        }
+
+        // צבע קבוע ליוזר, נגזר מהמייל/שם שלו - כדי שאותו משתמש תמיד יקבל אותו צבע אווטאר
+        function avatarColor(seed) {
+            const colors = ['#0ea5e9', '#f97316', '#8b5cf6', '#16a34a', '#ef4444', '#0d9488', '#d946ef', '#f59e0b', '#64748b', '#2563eb', '#dc2626', '#059669'];
+            let hash = 0;
+            const s = String(seed || '?');
+            for (let i = 0; i < s.length; i++) hash = s.charCodeAt(i) + ((hash << 5) - hash);
+            return colors[Math.abs(hash) % colors.length];
+        }
+
+        // מחזיר תמונת פרופיל אמיתית אם קיימת, אחרת אווטאר צבעוני עם האות הראשונה של השם (כמו בפורום המקור)
+        function avatarHtml(name, seed, photo, size, extraAttrs) {
+            extraAttrs = extraAttrs || '';
+            const isReal = photo && !/placeholder/i.test(photo);
+            if (isReal) {
+                return `<img src="${photo}" alt="" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;" ${extraAttrs}>`;
+            }
+            const letter = escapeHtml((name || '?').trim().charAt(0).toUpperCase() || '?');
+            const bg = avatarColor(seed || name);
+            const fontSize = Math.round(size * 0.42);
+            return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:${fontSize}px;flex-shrink:0;" ${extraAttrs}>${letter}</div>`;
         }
 
         function findUserByUid(uid) {
@@ -1902,7 +2095,7 @@
                 const latestHtml = latestPost ? `
                     <div class="category-latest-time">${escapeHtml(latestPost.created_at || '')}</div>
                     <div class="category-latest-row">
-                        <img src="${latestPost.author_avatar || 'https://via.placeholder.com/32'}">
+                        ${avatarHtml(latestPost.author_name, latestPost.author_email, latestPost.author_avatar, 32)}
                         <div class="category-latest-text">
                             <div class="category-latest-title">${escapeHtml(latestPost.title || 'ללא כותרת')}</div>
                             <div class="category-latest-author">${escapeHtml(latestPost.author_name || '')}</div>
@@ -2100,7 +2293,7 @@
 
                 card.innerHTML = `
                     <div class="topic-info">
-                        <img src="${mainPost.author_avatar || 'https://via.placeholder.com/40'}" class="topic-author-img" alt="">
+                        ${avatarHtml(mainPost.author_name, mainPost.author_email, mainPost.author_avatar, 44, 'class="topic-author-img"')}
                         <div class="topic-details">
                             <h3>${escapeHtml(mainPost.title || 'ללא כותרת')}</h3>
                             <div class="topic-meta">
@@ -2122,7 +2315,7 @@
         /* ============ תצוגת נושא בודד ============ */
 
         // כל התצוגות הראשיות של העמוד - שימוש מרכזי אחד כדי שלא נשכח תצוגה כשמוסיפים חדשה
-        const VIEW_IDS = ['home-view', 'thread-view', 'category-view', 'profile-view', 'latest-view', 'popular-view'];
+        const VIEW_IDS = ['home-view', 'thread-view', 'category-view', 'profile-view', 'latest-view', 'popular-view', 'users-view'];
         function hideAllViews() {
             VIEW_IDS.forEach(id => {
                 const el = document.getElementById(id);
@@ -2336,7 +2529,7 @@
                 postDiv.innerHTML = `
                     <div class="post-header">
                         <div class="post-user">
-                            <img src="${post.author_avatar || 'https://via.placeholder.com/36'}" class="user-avatar" alt="" style="cursor:pointer;" onclick="location.hash='#user/${uid}'">
+                            ${avatarHtml(post.author_name, post.author_email, post.author_avatar, 36, `style="cursor:pointer;" onclick="location.hash='#user/${uid}'"`)}
                             <div>
                                 <strong class="post-author-name" style="font-size: 14px;" onclick="location.hash='#user/${uid}'">${escapeHtml(post.author_name)}</strong>
                                 ${post.author_email === ADMIN_EMAIL ? '<span class="badge-admin">מנהל</span>' : ''}
@@ -2681,7 +2874,7 @@
                         const item = document.createElement('div');
                         item.className = 'panel-item';
                         item.onclick = () => { location.hash = '#user/' + u.uid; };
-                        item.innerHTML = `<img src="${u.avatar || 'https://via.placeholder.com/34'}"><div><div class="panel-item-title">${escapeHtml(u.name)}</div><div class="panel-item-sub">${u.count} הודעות</div></div>`;
+                        item.innerHTML = `${avatarHtml(u.name, u.email, u.avatar, 34)}<div><div class="panel-item-title">${escapeHtml(u.name)}</div><div class="panel-item-sub">${u.count} הודעות</div></div>`;
                         content.appendChild(item);
                     });
                 }
@@ -2695,6 +2888,68 @@
             currentPanel = null;
             if (document.getElementById('home-view').style.display !== 'none') setActiveNav('nav-home');
             else setActiveNav(null);
+        }
+
+        /* ============ עמוד משתמשים (רשת מלאה) ============ */
+
+        let usersSortMode = 'posts';
+
+        function setUsersSort(mode) {
+            usersSortMode = mode;
+            document.getElementById('users-sort-posts').classList.toggle('active', mode === 'posts');
+            document.getElementById('users-sort-name').classList.toggle('active', mode === 'name');
+            renderUsersGrid();
+        }
+
+        function openUsersView(fromHash) {
+            hideAllViews();
+            document.getElementById('users-view').style.display = 'block';
+            setActiveNav('nav-users');
+            closeSidebarPanel();
+            if (!fromHash) location.hash = '#users';
+            renderUsersGrid();
+        }
+
+        function renderUsersGrid() {
+            const container = document.getElementById('users-grid-container');
+            if (!container) return;
+
+            if (!currentUser) {
+                container.innerHTML = '<div class="panel-empty">יש להתחבר כדי לראות את רשימת המשתמשים</div>';
+                return;
+            }
+
+            const query = (document.getElementById('users-search-input').value || '').trim().toLowerCase();
+
+            let users = getUniqueUsers();
+            if (query) users = users.filter(u => (u.name || '').toLowerCase().includes(query));
+
+            if (usersSortMode === 'name') {
+                users.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+            } else {
+                users.sort((a, b) => b.count - a.count);
+            }
+
+            container.innerHTML = '';
+            if (users.length === 0) {
+                container.innerHTML = '<div class="panel-empty">לא נמצאו משתמשים</div>';
+                return;
+            }
+
+            users.forEach(u => {
+                const card = document.createElement('div');
+                card.className = 'user-card';
+                card.onclick = () => { location.hash = '#user/' + u.uid; };
+                card.innerHTML = `
+                    ${avatarHtml(u.name, u.email, u.avatar, 48)}
+                    <div class="user-card-info">
+                        <div class="user-card-name">${escapeHtml(u.name)}</div>
+                        <div class="user-card-handle">@${escapeHtml((u.name || '').replace(/\s+/g, ''))}</div>
+                        <div class="user-card-time">${u.count} הודעות</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
         }
 
         /* ============ תצוגות עמוד מלא: נושאים אחרונים / פופולריים ============ */
@@ -2726,7 +2981,7 @@
                 card.onclick = () => { location.hash = '#topic/' + topicId; };
                 card.innerHTML = `
                     <div class="topic-info">
-                        <img src="${mainPost.author_avatar || 'https://via.placeholder.com/44'}" class="topic-author-img" alt="">
+                        ${avatarHtml(mainPost.author_name, mainPost.author_email, mainPost.author_avatar, 44, 'class="topic-author-img"')}
                         <div class="topic-details">
                             <h3>${isPinned(mainPost) ? '<span class="badge-pinned"><i class="fa-solid fa-thumbtack"></i> מוצמד</span> ' : ''}${escapeHtml(mainPost.title || 'ללא כותרת')}</h3>
                             <div class="topic-meta">
@@ -2745,7 +3000,7 @@
                         <div class="topic-last-reply-time">${timeAgo(lastPost.created_at)}</div>
                         <div class="topic-last-reply-user">
                             <span>${escapeHtml(lastPost.author_name || '')}</span>
-                            <img src="${lastPost.author_avatar || 'https://via.placeholder.com/18'}" class="mini-avatar" alt="">
+                            ${avatarHtml(lastPost.author_name, lastPost.author_email, lastPost.author_avatar, 18, 'class="mini-avatar"')}
                         </div>
                         ${lastReplySnippet ? `<div class="topic-last-reply-snippet">${escapeHtml(lastReplySnippet)}</div>` : ''}
                     </div>
@@ -2808,7 +3063,7 @@
             const isAdmin = user.email === ADMIN_EMAIL;
 
             document.getElementById('profile-header').innerHTML = `
-                <img src="${user.avatar || 'https://via.placeholder.com/72'}" alt="">
+                ${avatarHtml(user.name, user.email, user.avatar, 72)}
                 <div>
                     <h2>${escapeHtml(user.name)} ${isAdmin ? '<span class="badge-admin">מנהל</span>' : ''}</h2>
                     <div class="profile-stats">
@@ -2833,7 +3088,7 @@
                 card.onclick = () => { location.hash = '#post/' + p.id; };
                 card.innerHTML = `
                     <div class="topic-info">
-                        <img src="${user.avatar || 'https://via.placeholder.com/40'}" class="topic-author-img" alt="">
+                        ${avatarHtml(user.name, user.email, user.avatar, 44, 'class="topic-author-img"')}
                         <div class="topic-details">
                             <h3>${escapeHtml(mainPost.title || 'ללא כותרת')}</h3>
                             <div class="topic-meta">
@@ -2865,6 +3120,8 @@
                 openLatestView(true);
             } else if (type === 'popular') {
                 openPopularView(true);
+            } else if (type === 'users') {
+                openUsersView(true);
             } else {
                 showHome();
             }
@@ -2938,6 +3195,8 @@
             } else if (document.getElementById('popular-view').style.display !== 'none') {
                 const topicsMap = getTopicsMap();
                 renderTopicsListInto('popular-topics-container', getPopularTopicIds(topicsMap), topicsMap, { emptyText: 'אין עדיין נושאים' });
+            } else if (document.getElementById('users-view').style.display !== 'none') {
+                renderUsersGrid();
             }
 
             window.scrollTo(0, scrollY);
