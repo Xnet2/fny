@@ -1,1 +1,842 @@
-1
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>פורום נווה יעקב</title>
+    
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Sign-In SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <style>
+        :root {
+            --bg-main: #f4f6f9;
+            --bg-card: #ffffff;
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --admin-badge: #ef4444;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Rubik', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* סרגל צדי בסגנון NodeBB */
+        .sidebar {
+            width: 70px;
+            background: #ffffff;
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            gap: 20px;
+            position: fixed;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            width: 42px;
+            height: 42px;
+            background: var(--primary);
+            color: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .sidebar-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 18px;
+            text-decoration: none;
+        }
+
+        .sidebar-icon:hover, .sidebar-icon.active {
+            background: #f1f5f9;
+            color: var(--primary);
+        }
+
+        /* אזור תוכן מרכזי */
+        .main-wrapper {
+            margin-right: 70px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* כותרת עליונה Header */
+        header {
+            background: #ffffff;
+            height: 65px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        /* גוף העמוד */
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            margin: 25px auto;
+            padding: 0 20px;
+        }
+
+        /* באנר ברכה NodeBB */
+        .welcome-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .welcome-card h2 {
+            font-size: 22px;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+
+        .welcome-card p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* כפתור יצירת נושא */
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+            font-size: 14px;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* רשימת נושאים */
+        .topics-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .topic-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 18px 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.1s, border-color 0.2s;
+        }
+
+        .topic-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .topic-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .topic-author-img {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+        }
+
+        .topic-details h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-main);
+        }
+
+        .topic-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .badge-category {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .badge-admin {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* תצוגת אשכול/נושא */
+        .thread-view {
+            display: none;
+        }
+
+        .thread-header {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .post-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: var(--shadow);
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 10px;
+        }
+
+        .post-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .post-content {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #334155;
+            white-space: pre-line;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        /* תיבת תגובה */
+        .reply-box {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 25px;
+        }
+
+        .reply-box textarea, .modal input, .modal textarea, .modal select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 8px;
+            margin-bottom: 15px;
+            outline: none;
+        }
+
+        .reply-box textarea:focus, .modal input:focus, .modal textarea:focus {
+            border-color: var(--primary);
+        }
+
+        /* חלון מודאל (צור נושא) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 550px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .modal-close {
+            cursor: pointer;
+            font-size: 20px;
+            color: var(--text-muted);
+        }
+
+        .loader {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- סרגל צדי צר בסגנון NodeBB -->
+    <div class="sidebar">
+        <div class="sidebar-logo">NY</div>
+        <a href="#" class="sidebar-icon active" onclick="showHome()" title="דף הבית"><i class="fa-solid fa-house"></i></a>
+        <a href="#" class="sidebar-icon" onclick="openNewTopicModal()" title="נושא חדש"><i class="fa-solid fa-pen-to-square"></i></a>
+    </div>
+
+    <div class="main-wrapper">
+        <!-- כותרת עליונה -->
+        <header>
+            <div class="header-title">
+                <i class="fa-solid fa-comments"></i>
+                <span>פורום נווה יעקב</span>
+            </div>
+            <div class="user-section">
+                <div id="g_id_onload"
+                    data-client_id="426523025549-7c50rkn7cun4vmm2r802u0ij6egjehtg.apps.googleusercontent.com"
+                    data-callback="handleCredentialResponse">
+                </div>
+                <div id="google-btn-container">
+                    <div class="g_id_signin" data-type="standard"></div>
+                </div>
+                <div id="user-info" class="user-profile" style="display: none;">
+                    <img id="user-avatar" class="user-avatar" src="" alt="פרופיל">
+                    <span id="user-name" style="font-weight: 500;"></span>
+                    <span id="admin-indicator" class="badge-admin" style="display:none;">מנהל</span>
+                    <button onclick="logout()" class="btn-secondary" style="margin-right: 10px;">התנתק</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- תוכן ראשי -->
+        <div class="container">
+
+            <!-- תצוגת רשימת נושאים (בית) -->
+            <div id="home-view">
+                <div class="welcome-card">
+                    <div>
+                        <h2>ברוכים הבאים לפורום נווה יעקב!</h2>
+                        <p>הקהילה הדיגיטלית של נווה יעקב – עדכונים, דיונים, עזרה והדדיות.</p>
+                    </div>
+                    <button class="btn-primary" onclick="openNewTopicModal()"><i class="fa-solid fa-plus"></i> נושא חדש</button>
+                </div>
+
+                <div id="topics-container" class="topics-list">
+                    <div class="loader"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>טוען נושאים...</div>
+                </div>
+            </div>
+
+            <!-- תצוגת נושא בודד (שרשור) -->
+            <div id="thread-view" class="thread-view">
+                <button class="btn-secondary" onclick="showHome()" style="margin-bottom: 15px;">
+                    <i class="fa-solid fa-arrow-right"></i> חזרה לרשימת הנושאים
+                </button>
+                
+                <div id="thread-header" class="thread-header"></div>
+                <div id="posts-container"></div>
+
+                <!-- תיבת תגובה -->
+                <div class="reply-box">
+                    <h3 style="font-size: 16px; margin-bottom: 10px;">הוספת תגובה</h3>
+                    <textarea id="reply-input" rows="4" placeholder="כתוב את תגובתך כאן..."></textarea>
+                    <button class="btn-primary" onclick="submitReply()">שלח תגובה</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- מודאל יצירת נושא חדש -->
+    <div id="topic-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>יצירת נושא חדש</h3>
+                <span class="modal-close" onclick="closeModal()">&times;</span>
+            </div>
+            <div>
+                <label>כותרת הנושא:</label>
+                <input type="text" id="new-topic-title" placeholder="הכנס כותרת קצרה וברורה">
+
+                <label>קטגוריה:</label>
+                <select id="new-topic-category">
+                    <option value="כללי">כללי</option>
+                    <option value="עזרה והדדיות">עזרה והדדיות</option>
+                    <option value="לוח מודעות">לוח מודעות</option>
+                    <option value="טכנולוגיה ומחשבים">טכנולוגיה ומחשבים</option>
+                </select>
+
+                <label>תוכן ההודעה:</label>
+                <textarea id="new-topic-content" rows="6" placeholder="פרט את נושא הדיון..."></textarea>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                    <button class="btn-secondary" onclick="closeModal()">ביטול</button>
+                    <button class="btn-primary" onclick="submitNewTopic()">פרסם נושא</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://sheetdb.io/api/v1/t9q5wwl0psz88";
+        const ADMIN_EMAIL = "dh058328@gmail.com";
+
+        let currentUser = null;
+        let allPosts = [];
+        let currentTopicId = null;
+
+        // פענוח Token של גוגל
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // טיפול בהתחברות מגוגל
+        function handleCredentialResponse(response) {
+            const data = parseJwt(response.credential);
+            if (data) {
+                currentUser = {
+                    name: data.name,
+                    email: data.email,
+                    picture: data.picture,
+                    isAdmin: data.email === ADMIN_EMAIL
+                };
+                localStorage.setItem('forum_user', JSON.stringify(currentUser));
+                updateUserUI();
+            }
+        }
+
+        function updateUserUI() {
+            if (currentUser) {
+                document.getElementById('google-btn-container').style.display = 'none';
+                document.getElementById('user-info').style.display = 'flex';
+                document.getElementById('user-name').innerText = currentUser.name;
+                document.getElementById('user-avatar').src = currentUser.picture;
+
+                if (currentUser.isAdmin) {
+                    document.getElementById('admin-indicator').style.display = 'inline-block';
+                }
+            } else {
+                document.getElementById('google-btn-container').style.display = 'block';
+                document.getElementById('user-info').style.display = 'none';
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('forum_user');
+            updateUserUI();
+        }
+
+        // טעינת פוסטים מ-SheetDB
+        async function fetchPosts() {
+            try {
+                const res = await fetch(API_URL);
+                allPosts = await res.json();
+                renderTopics();
+            } catch (err) {
+                console.error("שגיאה שטעינת נתונים:", err);
+                document.getElementById('topics-container').innerHTML = '<div class="loader">ארעה שגיאה שטעינת הפורום.</div>';
+            }
+        }
+
+        // הצגת רשימת נושאים
+        function renderTopics() {
+            const container = document.getElementById('topics-container');
+            container.innerHTML = '';
+
+            // קיבוץ לפי topic_id
+            const topicsMap = {};
+            allPosts.forEach(post => {
+                if (!post.topic_id) return;
+                if (!topicsMap[post.topic_id]) {
+                    topicsMap[post.topic_id] = [];
+                }
+                topicsMap[post.topic_id].push(post);
+            });
+
+            const topicIds = Object.keys(topicsMap);
+            if (topicIds.length === 0) {
+                container.innerHTML = '<div class="loader">אין עדיין נושאים בפורום. כולם מוזמנים לפתוח נושא חדש!</div>';
+                return;
+            }
+
+            topicIds.reverse().forEach(topicId => {
+                const posts = topicsMap[topicId];
+                const mainPost = posts[0]; // ההודעה הראשונה באשכול
+                const replyCount = posts.length - 1;
+                const lastPost = posts[posts.length - 1];
+
+                const card = document.createElement('div');
+                card.className = 'topic-card';
+                card.onclick = () => openThread(topicId);
+
+                card.innerHTML = `
+                    <div class="topic-info">
+                        <img src="${mainPost.author_avatar || 'https://via.placeholder.com/40'}" class="topic-author-img" alt="">
+                        <div class="topic-details">
+                            <h3>${escapeHtml(mainPost.title || 'ללא כותרת')}</h3>
+                            <div class="topic-meta">
+                                <span class="badge-category">${escapeHtml(mainPost.category || 'כללי')}</span>
+                                <span>נפתח על ידי <strong>${escapeHtml(mainPost.author_name)}</strong></span>
+                                <span>תגובה אחרונה: ${escapeHtml(lastPost.created_at || '')}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: left; color: var(--text-muted); font-size: 13px;">
+                        <i class="fa-regular fa-comment"></i> ${replyCount} תגובות
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // פתיחת אשכול בודד
+        function openThread(topicId) {
+            currentTopicId = topicId;
+            const posts = allPosts.filter(p => p.topic_id === topicId);
+            if (posts.length === 0) return;
+
+            const mainPost = posts[0];
+            document.getElementById('home-view').style.display = 'none';
+            document.getElementById('thread-view').style.display = 'block';
+
+            // כותרת האשכול
+            document.getElementById('thread-header').innerHTML = `
+                <div class="topic-meta" style="margin-bottom: 8px;">
+                    <span class="badge-category">${escapeHtml(mainPost.category || 'כללי')}</span>
+                </div>
+                <h2>${escapeHtml(mainPost.title)}</h2>
+            `;
+
+            // פוסטים ותגובות
+            const postsContainer = document.getElementById('posts-container');
+            postsContainer.innerHTML = '';
+
+            posts.forEach((post, index) => {
+                const canManage = currentUser && (currentUser.isAdmin || currentUser.email === post.author_email);
+
+                const postDiv = document.createElement('div');
+                postDiv.className = 'post-card';
+                postDiv.innerHTML = `
+                    <div class="post-header">
+                        <div class="post-user">
+                            <img src="${post.author_avatar || 'https://via.placeholder.com/36'}" class="user-avatar" alt="">
+                            <div>
+                                <strong style="font-size: 14px;">${escapeHtml(post.author_name)}</strong>
+                                ${post.author_email === ADMIN_EMAIL ? '<span class="badge-admin">מנהל</span>' : ''}
+                                <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(post.created_at || '')}</div>
+                            </div>
+                        </div>
+                        <span style="font-size: 12px; color: var(--text-muted);">#${index + 1}</span>
+                    </div>
+                    <div class="post-content" id="post-content-${post.id}">${escapeHtml(post.content)}</div>
+                    ${canManage ? `
+                        <div class="post-actions">
+                            <button class="btn-secondary" onclick="editPost('${post.id}')"><i class="fa-solid fa-pen"></i> ערוך</button>
+                            <button class="btn-danger" onclick="deletePost('${post.id}')"><i class="fa-solid fa-trash"></i> מחק</button>
+                        </div>
+                    ` : ''}
+                `;
+                postsContainer.appendChild(postDiv);
+            });
+        }
+
+        // חזרה לדף הבית
+        function showHome() {
+            document.getElementById('home-view').style.display = 'block';
+            document.getElementById('thread-view').style.display = 'none';
+            currentTopicId = null;
+        }
+
+        // פתיחת/סגירת מודאל
+        function openNewTopicModal() {
+            if (!currentUser) {
+                alert('יש להתחבר עם חשבון גוגל כדי לפתוח נושא חדש');
+                return;
+            }
+            document.getElementById('topic-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('topic-modal').style.display = 'none';
+        }
+
+        // יצירת נושא חדש
+        async function submitNewTopic() {
+            const title = document.getElementById('new-topic-title').value.trim();
+            const category = document.getElementById('new-topic-category').value;
+            const content = document.getElementById('new-topic-content').value.trim();
+
+            if (!title || !content) {
+                alert('אנא למלא את כל השדות');
+                return;
+            }
+
+            const newTopicId = 'topic_' + Date.now();
+            const newPost = {
+                id: 'post_' + Date.now(),
+                topic_id: newTopicId,
+                title: title,
+                category: category,
+                author_name: currentUser.name,
+                author_email: currentUser.email,
+                author_avatar: currentUser.picture,
+                content: content,
+                created_at: new Date().toLocaleString('he-IL')
+            };
+
+            closeModal();
+
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: [newPost] })
+                });
+
+                document.getElementById('new-topic-title').value = '';
+                document.getElementById('new-topic-content').value = '';
+                await fetchPosts();
+            } catch (err) {
+                alert('שגיאה בשמירת הנושא');
+            }
+        }
+
+        // שליחת תגובה
+        async function submitReply() {
+            if (!currentUser) {
+                alert('יש להתחבר כדי להגיב');
+                return;
+            }
+
+            const input = document.getElementById('reply-input');
+            const content = input.value.trim();
+            if (!content) return;
+
+            const replyPost = {
+                id: 'post_' + Date.now(),
+                topic_id: currentTopicId,
+                title: '',
+                category: '',
+                author_name: currentUser.name,
+                author_email: currentUser.email,
+                author_avatar: currentUser.picture,
+                content: content,
+                created_at: new Date().toLocaleString('he-IL')
+            };
+
+            input.value = '';
+
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: [replyPost] })
+                });
+
+                await fetchPosts();
+                openThread(currentTopicId);
+            } catch (err) {
+                alert('שגיאה בשליחת התגובה');
+            }
+        }
+
+        // עריכת פוסט (מנהל / מחבר)
+        async function editPost(id) {
+            const post = allPosts.find(p => p.id === id);
+            if (!post) return;
+
+            const newContent = prompt('ערוך את תוכן ההודעה:', post.content);
+            if (newContent === null || newContent.trim() === '') return;
+
+            try {
+                await fetch(`${API_URL}/id/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: { content: newContent.trim() } })
+                });
+
+                await fetchPosts();
+                if (currentTopicId) openThread(currentTopicId);
+            } catch (err) {
+                alert('שגיאה בעדכון ההודעה');
+            }
+        }
+
+        // מחיקת פוסט (מנהל / מחבר)
+        async function deletePost(id) {
+            if (!confirm('האם אתה בטוח שברצונך למחוק הודעה זו?')) return;
+
+            try {
+                await fetch(`${API_URL}/id/${id}`, {
+                    method: 'DELETE'
+                });
+
+                await fetchPosts();
+                if (currentTopicId) {
+                    const remainingInThread = allPosts.filter(p => p.topic_id === currentTopicId && p.id !== id);
+                    if (remainingInThread.length === 0) {
+                        showHome();
+                    } else {
+                        openThread(currentTopicId);
+                    }
+                }
+            } catch (err) {
+                alert('שגיאה במחיקת ההודעה');
+            }
+        }
+
+        // עזר למניעת XSS
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+        }
+
+        // אתחול העמוד
+        window.onload = () => {
+            const savedUser = localStorage.getItem('forum_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                updateUserUI();
+            }
+            fetchPosts();
+        };
+    </script>
+</body>
+</html>
