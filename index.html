@@ -1083,9 +1083,12 @@
 
             <!-- תצוגת נושאים בתוך קטגוריה -->
             <div id="category-view" class="thread-view">
-                <button class="btn-secondary" onclick="showHome()" style="margin-bottom: 15px;">
-                    <i class="fa-solid fa-arrow-right"></i> חזרה לקטגוריות
-                </button>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                    <button class="btn-secondary" onclick="showHome()">
+                        <i class="fa-solid fa-arrow-right"></i> חזרה לקטגוריות
+                    </button>
+                    <button class="btn-primary" onclick="openNewTopicModal(currentCategoryId)"><i class="fa-solid fa-plus"></i> נושא חדש</button>
+                </div>
 
                 <div id="category-header" class="thread-header"></div>
 
@@ -1890,8 +1893,10 @@
         function showHome() {
             document.getElementById('home-view').style.display = 'block';
             document.getElementById('thread-view').style.display = 'none';
+            document.getElementById('category-view').style.display = 'none';
             document.getElementById('profile-view').style.display = 'none';
             currentTopicId = null;
+            currentCategoryId = null;
             setActiveNav('nav-home');
             if (location.hash) history.replaceState(null, '', location.pathname + location.search);
         }
@@ -2139,11 +2144,32 @@
 
         /* ============ פרסום נושא/תגובה ============ */
 
-        function openNewTopicModal() {
+        function populateCategorySelect(preselectId) {
+            const select = document.getElementById('new-topic-category');
+            select.innerHTML = '';
+            const categories = getCategories();
+            if (categories.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.innerText = 'כללי';
+                select.appendChild(opt);
+                return;
+            }
+            categories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.topic_id;
+                opt.innerText = cat.title;
+                select.appendChild(opt);
+            });
+            if (preselectId) select.value = preselectId;
+        }
+
+        function openNewTopicModal(preselectCategoryId) {
             if (!currentUser) {
                 showToast('יש להתחבר עם חשבון גוגל כדי לפתוח נושא חדש', 'error');
                 return;
             }
+            populateCategorySelect(preselectCategoryId || currentCategoryId);
             document.getElementById('topic-modal').style.display = 'flex';
         }
 
@@ -2438,6 +2464,8 @@
             const [type, id] = hash.split('/');
             if (type === 'topic' && id) {
                 openThread(id, true);
+            } else if (type === 'category' && id) {
+                openCategory(id, true);
             } else if (type === 'post' && id) {
                 openThreadByPostId(id);
             } else if (type === 'user' && id) {
