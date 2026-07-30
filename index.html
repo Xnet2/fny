@@ -1076,6 +1076,15 @@
         }
         .post-content img {
             display: block;
+            max-width: 100%;
+            max-height: 420px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin: 10px 0;
+            cursor: zoom-in;
         }
 
         .post-footer {
@@ -1890,7 +1899,7 @@
         function renderContent(str) {
             if (!str) return '';
             let s = escapeHtml(str);
-            s = s.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0;">');
+            s = s.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" onclick="window.open(this.src,\'_blank\')">');
             s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:var(--primary);">$1</a>');
             s = s.replace(/\*\*([^\*\n]+)\*\*/g, '<strong>$1</strong>');
             s = s.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
