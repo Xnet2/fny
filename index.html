@@ -1258,26 +1258,6 @@
             return new Promise(resolve => setTimeout(resolve, ms));
         }
 
-        // בודק פעם אחת אם השם שאנחנו מחפשים בו קיים בפועל בכותרות הגיליון,
-        // כדי לחשוף מיד בעיות כמו רישיות שונה ("ID" במקום "id") או רווח מיותר בכותרת
-        let sheetColumnsCache = null;
-        async function debugCheckColumnExists(column) {
-            try {
-                if (!sheetColumnsCache) {
-                    const res = await fetch(`${API_URL}/keys`);
-                    if (res.ok) sheetColumnsCache = await res.json();
-                }
-                if (Array.isArray(sheetColumnsCache)) {
-                    console.warn('[פורום] כותרות העמודות שנמצאו בפועל בגיליון:', sheetColumnsCache);
-                    if (!sheetColumnsCache.includes(column)) {
-                        console.warn(`[פורום] שימו לב: העמודה "${column}" לא נמצאת ברשימת הכותרות! ייתכן שבגיליון השם כתוב אחרת (למשל אותיות גדולות, רווח מיותר, או איות שונה).`);
-                    }
-                }
-            } catch (e) {
-                console.warn('[פורום] לא הצלחתי לבדוק את כותרות העמודות בגיליון:', e);
-            }
-        }
-
         // עדכון שורה לפי עמודה+ערך, עם ניסיונות חוזרים.
         // שורה שנוצרה הרגע (נושא/תגובה חדשים) לפעמים עדיין לא "נתפסת" בחיפוש של SheetDB
         // מיד לאחר היצירה, וזה גורם לתשובת 404 - למרות שהשורה קיימת בפועל.
@@ -1294,10 +1274,6 @@
                     });
                     if (res.ok) return true;
                     if (res.status === 404 && attempt < retries) { await wait(delayMs); continue; }
-                    if (res.status === 404) {
-                        console.warn(`[פורום] PATCH ${column}=${value} החזיר 404 אחרי ${retries + 1} ניסיונות.`);
-                        debugCheckColumnExists(column);
-                    }
                     return false;
                 } catch (e) {
                     if (attempt < retries) { await wait(delayMs); continue; }
