@@ -267,6 +267,14 @@
             cursor: pointer;
             transition: transform 0.1s, border-color 0.2s;
             min-width: 0;
+            position: relative;
+        }
+
+        .user-card-edit {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: #fff;
         }
 
         .user-card:hover {
@@ -1411,7 +1419,7 @@
                     <div class="g_id_signin" data-type="standard"></div>
                 </div>
                 <div id="user-info" class="user-profile" style="display: none;">
-                    <img id="user-avatar" class="user-avatar" src="" alt="פרופיל" onclick="goToMyProfile()">
+                    <span id="user-avatar" class="user-avatar" style="display:inline-flex; cursor:pointer;" onclick="goToMyProfile()"></span>
                     <span id="user-name" class="user-name-link" style="font-weight: 500;" onclick="goToMyProfile()"></span>
                     <span id="admin-indicator" class="badge-admin" style="display:none;">מנהל</span>
                     <button onclick="logout()" class="btn-secondary" style="margin-right: 10px;">התנתק</button>
@@ -1628,6 +1636,33 @@
         </div>
     </div>
 
+    <!-- מודאל עריכת פרטי משתמש (למנהל בלבד) -->
+    <div id="user-edit-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>עריכת פרטי משתמש</h3>
+                <span class="modal-close" onclick="closeUserEditModal()">&times;</span>
+            </div>
+            <div>
+                <label>אימייל (לא ניתן לשינוי):</label>
+                <div id="user-edit-email-display" style="font-size: 13px; color: var(--text-muted); margin: 6px 0 15px;"></div>
+
+                <label>שם תצוגה:</label>
+                <input type="text" id="user-edit-name" placeholder="שם תצוגה">
+
+                <label>קישור לתמונת פרופיל (לא חובה):</label>
+                <input type="text" id="user-edit-avatar" placeholder="https://... (השאירו ריק לאווטאר צבעוני)">
+
+                <p style="font-size: 12px; color: var(--text-muted); margin: -8px 0 15px;">השינוי יחול על כל ההודעות והנושאים הקיימים של המשתמש בפורום.</p>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                    <button class="btn-secondary" onclick="closeUserEditModal()">ביטול</button>
+                    <button class="btn-primary" onclick="saveUserEdit()">שמור שינויים</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- מודאל עריכת פוסט -->
     <div id="edit-modal" class="modal-overlay">
         <div class="modal">
@@ -1782,6 +1817,7 @@
         let replyingToQuote = null; // {id, author_name, snippet}
         let editingPostId = null;
         let editingTopicMainId = null;
+        let editingUserEmail = null;
         let confirmCallback = null;
 
         /* ============ עזר: משתמשים ============ */
@@ -2183,7 +2219,7 @@
                 document.getElementById('google-btn-container').style.display = 'none';
                 document.getElementById('user-info').style.display = 'flex';
                 document.getElementById('user-name').innerText = currentUser.name;
-                document.getElementById('user-avatar').src = currentUser.picture;
+                document.getElementById('user-avatar').innerHTML = avatarHtml(currentUser.name, currentUser.email, currentUser.picture, 36);
                 document.getElementById('admin-indicator').style.display = currentUser.isAdmin ? 'inline-block' : 'none';
                 document.getElementById('new-category-btn').style.display = currentUser.isAdmin ? 'inline-flex' : 'none';
             } else {
@@ -3302,7 +3338,13 @@
                 const card = document.createElement('div');
                 card.className = 'user-card';
                 card.onclick = () => { location.hash = '#user/' + u.uid; };
+                const adminEdit = (currentUser && currentUser.isAdmin) ? `
+                    <button class="icon-btn user-card-edit" title="עריכת שם ופרופיל" onclick="event.stopPropagation(); openEditUserModal('${u.uid}')">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                ` : '';
                 card.innerHTML = `
+                    ${adminEdit}
                     ${avatarHtml(u.name, u.email, u.avatar, 48)}
                     <div class="user-card-info">
                         <div class="user-card-name">${escapeHtml(u.name)}</div>
@@ -3312,6 +3354,57 @@
                 `;
                 container.appendChild(card);
             });
+        }
+
+        /* ============ עריכת פרטי משתמש (מנהל בלבד) ============ */
+
+        function openEditUserModal(uid) {
+            if (!currentUser || !currentUser.isAdmin) return;
+            const user = findUserByUid(uid);
+            if (!user) return;
+            editingUserEmail = user.email;
+            document.getElementById('user-edit-email-display').innerText = user.email;
+            document.getElementById('user-edit-name').value = user.name || '';
+            document.getElementById('user-edit-avatar').value = (user.avatar && !/placeholder/i.test(user.avatar)) ? user.avatar : '';
+            document.getElementById('user-edit-modal').style.display = 'flex';
+        }
+
+        function closeUserEditModal() {
+            document.getElementById('user-edit-modal').style.display = 'none';
+            editingUserEmail = null;
+        }
+
+        async function saveUserEdit() {
+            if (!editingUserEmail) return;
+            const newName = document.getElementById('user-edit-name').value.trim();
+            const newAvatar = document.getElementById('user-edit-avatar').value.trim();
+            if (!newName) {
+                showToast('יש להזין שם תצוגה', 'error');
+                return;
+            }
+
+            const email = editingUserEmail;
+            closeUserEditModal();
+
+            try {
+                const ok = await sheetdbPatch('author_email', email, { author_name: newName, author_avatar: newAvatar });
+                if (!ok) throw new Error('העדכון נכשל בשרת');
+
+                await fetchPosts();
+
+                // אם המנהל ערך את עצמו - מעדכנים גם את המשתמש המחובר כרגע כדי שהשינוי ישתקף מייד בכל הממשק
+                if (currentUser && currentUser.email === email) {
+                    currentUser.name = newName;
+                    currentUser.picture = newAvatar;
+                    localStorage.setItem('forum_user', JSON.stringify(currentUser));
+                    updateUserUI();
+                }
+
+                refreshCurrentViewInPlace();
+                showToast('פרטי המשתמש עודכנו בהצלחה', 'success');
+            } catch (err) {
+                showToast('שגיאה בעדכון פרטי המשתמש', 'error');
+            }
         }
 
         /* ============ תצוגות תגיות ============ */
@@ -3486,6 +3579,7 @@
                         <span><i class="fa-solid fa-list"></i> ${topicsStarted} נושאים</span>
                     </div>
                 </div>
+                ${(currentUser && currentUser.isAdmin) ? `<button class="btn-secondary" style="margin-right:auto;" onclick="openEditUserModal('${uid}')"><i class="fa-solid fa-pen"></i> עריכת שם ופרופיל</button>` : ''}
             `;
 
             const listEl = document.getElementById('profile-posts');
@@ -3555,7 +3649,7 @@
         let refreshInFlight = false;
 
         function isAnyModalOpen() {
-            return ['topic-modal', 'category-modal', 'edit-modal', 'confirm-modal'].some(id => {
+            return ['topic-modal', 'category-modal', 'edit-modal', 'confirm-modal', 'user-edit-modal'].some(id => {
                 const el = document.getElementById(id);
                 return el && el.style.display === 'flex';
             });
