@@ -1907,6 +1907,20 @@
             return null;
         }
 
+        // מחפש את הפרופיל (שם + תמונה) האחרון שנשמר בפורום עבור מייל נתון,
+        // כדי שהתחברות מחדש עם גוגל תזכור שם/תמונה שהוגדרו ידנית (למשל ע"י מנהל)
+        // ולא תחזיר תמיד את השם/התמונה המקוריים מחשבון הגוגל
+        function findUserProfileByEmail(email) {
+            if (!email) return null;
+            for (let i = allPosts.length - 1; i >= 0; i--) {
+                const p = allPosts[i];
+                if (p.author_email === email) {
+                    return { name: p.author_name, avatar: p.author_avatar };
+                }
+            }
+            return null;
+        }
+
         function getUniqueUsers() {
             const map = {};
             allPosts.forEach(p => {
@@ -2202,10 +2216,13 @@
         function handleCredentialResponse(response) {
             const data = parseJwt(response.credential);
             if (data) {
+                // אם למשתמש הזה כבר יש היסטוריה בפורום - זוכרים את השם/תמונה שנשמרו לו
+                // (כולל אם מנהל שינה אותם), במקום להחליף אותם תמיד בנתונים הטריים מגוגל
+                const existing = findUserProfileByEmail(data.email);
                 currentUser = {
-                    name: data.name,
+                    name: existing ? (existing.name || data.name) : data.name,
                     email: data.email,
-                    picture: data.picture,
+                    picture: existing ? (existing.avatar || '') : data.picture,
                     isAdmin: data.email === ADMIN_EMAIL
                 };
                 localStorage.setItem('forum_user', JSON.stringify(currentUser));
