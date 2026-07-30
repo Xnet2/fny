@@ -321,11 +321,11 @@
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 10px;
-            padding: 18px 20px;
+            padding: 16px 20px;
             box-shadow: var(--shadow);
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 16px;
             cursor: pointer;
             transition: transform 0.1s, border-color 0.2s;
         }
@@ -340,6 +340,7 @@
             align-items: center;
             gap: 15px;
             min-width: 0;
+            flex: 1 1 auto;
         }
 
         .topic-author-img {
@@ -349,11 +350,16 @@
             flex-shrink: 0;
         }
 
+        .topic-details {
+            min-width: 0;
+        }
+
         .topic-details h3 {
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 4px;
-            color: var(--text-main);
+            color: #78862e;
+            line-height: 1.35;
         }
 
         .topic-meta {
@@ -363,6 +369,88 @@
             gap: 12px;
             align-items: center;
             flex-wrap: wrap;
+        }
+
+        .topic-thumb {
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .topic-stats-row {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .stat-box {
+            background: #f3f4f6;
+            border-radius: 8px;
+            padding: 8px 12px;
+            text-align: center;
+            min-width: 56px;
+        }
+
+        .stat-box strong {
+            display: block;
+            font-size: 15px;
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        .stat-box span {
+            display: block;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .topic-last-reply {
+            flex-shrink: 0;
+            width: 160px;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: right;
+        }
+
+        .topic-last-reply-time {
+            margin-bottom: 3px;
+        }
+
+        .topic-last-reply-user {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            justify-content: flex-end;
+            color: var(--primary);
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+
+        .mini-avatar {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .topic-last-reply-snippet {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 800px) {
+            .topic-last-reply { display: none; }
+        }
+
+        @media (max-width: 560px) {
+            .topic-thumb { display: none; }
+            .stat-box { min-width: 44px; padding: 6px 8px; }
         }
 
         .badge-category {
@@ -1453,6 +1541,44 @@
             return str.length > n ? str.slice(0, n) + '…' : str;
         }
 
+        // מסיר סימוני מרקדאון בסיסיים כדי להציג תצוגה מקדימה נקייה של תגובה
+        function stripMarkdownForPreview(str) {
+            if (!str) return '';
+            let s = String(str);
+            s = s.replace(/!\[[^\]]*\]\([^)]+\)/g, '');
+            s = s.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+            s = s.replace(/[*_~`#>]/g, '');
+            s = s.replace(/\s+/g, ' ').trim();
+            return truncate(s, 90);
+        }
+
+        // ממיר את מחרוזת התאריך שנשמרת (toLocaleString('he-IL')) לאובייקט Date, בלי להסתמך על פענוח תאריכים אוטומטי של הדפדפן
+        function parseStoredDate(str) {
+            if (!str) return null;
+            const m = String(str).match(/(\d{1,2})\.(\d{1,2})\.(\d{4}),?\s*(\d{1,2}):(\d{2}):(\d{2})/);
+            if (!m) return null;
+            const [, d, mo, y, h, mi, s] = m.map(Number);
+            return new Date(y, mo - 1, d, h, mi, s);
+        }
+
+        // מציג זמן יחסי בעברית ("לפני 3 דקות"), עם נפילה חזרה לטקסט המקורי אם התאריך לא ניתן לפענוח
+        function timeAgo(str) {
+            const date = parseStoredDate(str);
+            if (!date || isNaN(date.getTime())) return escapeHtml(str || '');
+            const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
+            if (diffSec < 60) return 'לפני פחות מדקה';
+            const diffMin = Math.floor(diffSec / 60);
+            if (diffMin < 60) return diffMin === 1 ? 'לפני דקה' : `לפני ${diffMin} דקות`;
+            const diffHour = Math.floor(diffMin / 60);
+            if (diffHour < 24) return diffHour === 1 ? 'לפני שעה' : `לפני ${diffHour} שעות`;
+            const diffDay = Math.floor(diffHour / 24);
+            if (diffDay < 30) return diffDay === 1 ? 'לפני יום' : `לפני ${diffDay} ימים`;
+            const diffMonth = Math.floor(diffDay / 30);
+            if (diffMonth < 12) return diffMonth === 1 ? 'לפני חודש' : `לפני ${diffMonth} חודשים`;
+            const diffYear = Math.floor(diffMonth / 12);
+            return diffYear === 1 ? 'לפני שנה' : `לפני ${diffYear} שנים`;
+        }
+
         function num(v) {
             const n = parseInt(v);
             return isNaN(n) ? 0 : n;
@@ -1829,43 +1955,9 @@
                 </div>
             `;
 
-            const container = document.getElementById('category-topics-container');
-            container.innerHTML = '';
             const topicsMap = getTopicsMap();
             const topicIds = Object.keys(topicsMap).filter(tid => topicsMap[tid][0].category === categoryId);
-
-            if (topicIds.length === 0) {
-                container.innerHTML = '<div class="loader">אין עדיין נושאים בקטגוריה זו. פתחו נושא חדש!</div>';
-                return;
-            }
-
-            sortTopicIdsWithPinned(topicIds, topicsMap).forEach(topicId => {
-                const posts = topicsMap[topicId];
-                const mainPost = posts[0];
-                const replyCount = posts.length - 1;
-                const lastPost = posts[posts.length - 1];
-
-                const card = document.createElement('div');
-                card.className = 'topic-card';
-                card.onclick = () => { location.hash = '#topic/' + topicId; };
-                card.innerHTML = `
-                    <div class="topic-info">
-                        <img src="${mainPost.author_avatar || 'https://via.placeholder.com/40'}" class="topic-author-img" alt="">
-                        <div class="topic-details">
-                            <h3>${isPinned(mainPost) ? '<span class="badge-pinned"><i class="fa-solid fa-thumbtack"></i> מוצמד</span> ' : ''}${escapeHtml(mainPost.title || 'ללא כותרת')}</h3>
-                            <div class="topic-meta">
-                                <span>נפתח על ידי <strong>${escapeHtml(mainPost.author_name)}</strong></span>
-                                <span>תגובה אחרונה: ${escapeHtml(lastPost.created_at || '')}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="topic-stats">
-                        <span><i class="fa-regular fa-eye"></i> ${num(mainPost.views)} צפיות</span>
-                        <span><i class="fa-regular fa-comment"></i> ${replyCount} תגובות</span>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
+            renderTopicsListInto('category-topics-container', sortTopicIdsWithPinned(topicIds, topicsMap), topicsMap, { emptyText: 'אין עדיין נושאים בקטגוריה זו. פתחו נושא חדש!' });
         }
 
         function renderIconPicker() {
@@ -2621,27 +2713,41 @@
             topicIds.forEach(topicId => {
                 const posts = topicsMap[topicId];
                 const mainPost = posts[0];
-                const replyCount = posts.length - 1;
                 const lastPost = posts[posts.length - 1];
+                const totalVotes = posts.reduce((sum, p) => sum + num(p.likes), 0);
+
+                const thumbMatch = (mainPost.content || '').match(/!\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/);
+                const thumbHtml = thumbMatch ? `<img src="${thumbMatch[1]}" class="topic-thumb" alt="">` : '';
+
+                const lastReplySnippet = stripMarkdownForPreview(lastPost.content);
 
                 const card = document.createElement('div');
                 card.className = 'topic-card';
                 card.onclick = () => { location.hash = '#topic/' + topicId; };
                 card.innerHTML = `
                     <div class="topic-info">
-                        <img src="${mainPost.author_avatar || 'https://via.placeholder.com/40'}" class="topic-author-img" alt="">
+                        <img src="${mainPost.author_avatar || 'https://via.placeholder.com/44'}" class="topic-author-img" alt="">
                         <div class="topic-details">
                             <h3>${isPinned(mainPost) ? '<span class="badge-pinned"><i class="fa-solid fa-thumbtack"></i> מוצמד</span> ' : ''}${escapeHtml(mainPost.title || 'ללא כותרת')}</h3>
                             <div class="topic-meta">
                                 <span class="badge-category">${escapeHtml(getCategoryName(mainPost.category))}</span>
-                                <span>נפתח על ידי <strong>${escapeHtml(mainPost.author_name)}</strong></span>
-                                <span>תגובה אחרונה: ${escapeHtml(lastPost.created_at || '')}</span>
+                                <span>${timeAgo(mainPost.created_at)}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="topic-stats">
-                        <span><i class="fa-regular fa-eye"></i> ${num(mainPost.views)} צפיות</span>
-                        <span><i class="fa-regular fa-comment"></i> ${replyCount} תגובות</span>
+                    ${thumbHtml}
+                    <div class="topic-stats-row">
+                        <div class="stat-box"><strong>${num(mainPost.views)}</strong><span>צפיות</span></div>
+                        <div class="stat-box"><strong>${posts.length}</strong><span>פוסטים</span></div>
+                        <div class="stat-box"><strong>${totalVotes}</strong><span>הצבעות</span></div>
+                    </div>
+                    <div class="topic-last-reply">
+                        <div class="topic-last-reply-time">${timeAgo(lastPost.created_at)}</div>
+                        <div class="topic-last-reply-user">
+                            <span>${escapeHtml(lastPost.author_name || '')}</span>
+                            <img src="${lastPost.author_avatar || 'https://via.placeholder.com/18'}" class="mini-avatar" alt="">
+                        </div>
+                        ${lastReplySnippet ? `<div class="topic-last-reply-snippet">${escapeHtml(lastReplySnippet)}</div>` : ''}
                     </div>
                 `;
                 container.appendChild(card);
