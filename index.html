@@ -1254,6 +1254,53 @@
         const CATEGORY_PREFIX = 'cat_';
         const DEFAULT_ICON = 'fa-comments';
 
+        function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // עדכון שורה לפי עמודה+ערך, עם ניסיונות חוזרים.
+        // שורה שנוצרה הרגע (נושא/תגובה חדשים) לפעמים עדיין לא "נתפסת" בחיפוש של SheetDB
+        // מיד לאחר היצירה, וזה גורם לתשובת 404 - למרות שהשורה קיימת בפועל.
+        // כדי לא לאבד לייקים/צפיות/עריכות במקרה כזה, מנסים שוב כמה פעמים לפני שמוותרים.
+        async function sheetdbPatch(column, value, data, opts = {}) {
+            const retries = opts.retries ?? 3;
+            const delayMs = opts.delayMs ?? 800;
+            for (let attempt = 0; attempt <= retries; attempt++) {
+                try {
+                    const res = await fetch(`${API_URL}/${column}/${encodeURIComponent(value)}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data })
+                    });
+                    if (res.ok) return true;
+                    if (res.status === 404 && attempt < retries) { await wait(delayMs); continue; }
+                    return false;
+                } catch (e) {
+                    if (attempt < retries) { await wait(delayMs); continue; }
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        // מחיקת שורה לפי עמודה+ערך, עם אותו הגיון של ניסיונות חוזרים
+        async function sheetdbDelete(column, value, opts = {}) {
+            const retries = opts.retries ?? 2;
+            const delayMs = opts.delayMs ?? 800;
+            for (let attempt = 0; attempt <= retries; attempt++) {
+                try {
+                    const res = await fetch(`${API_URL}/${column}/${encodeURIComponent(value)}`, { method: 'DELETE' });
+                    if (res.ok) return true;
+                    if (res.status === 404 && attempt < retries) { await wait(delayMs); continue; }
+                    return false;
+                } catch (e) {
+                    if (attempt < retries) { await wait(delayMs); continue; }
+                    return false;
+                }
+            }
+            return false;
+        }
+
         // קטגוריות ברירת מחדל שייווצרו אוטומטית בפעם הראשונה (רק אם מנהל מחובר ואין עדיין קטגוריות)
         const DEFAULT_CATEGORIES = [
             { title: 'כללי', content: 'שיחה כללית ועדכונים לקהילה', icon: 'fa-comments' },
@@ -1815,11 +1862,8 @@
 
             try {
                 if (editingCategoryId) {
-                    await fetch(`${API_URL}/topic_id/${editingCategoryId}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data: { title: name, content: desc, category: selectedCategoryIcon } })
-                    });
+                    const ok = await sheetdbPatch('topic_id', editingCategoryId, { title: name, content: desc, category: selectedCategoryIcon });
+                    if (!ok) throw new Error('העדכון נכשל בשרת');
                     showToast('הקטגוריה עודכנה', 'success');
                 } else {
                     const newCat = {
@@ -1855,7 +1899,8 @@
             const catId = editingCategoryId;
             showConfirm('מחיקת הקטגוריה לא תמחק את הנושאים בתוכה, אך הם לא ישויכו יותר לקטגוריה כלשהי. להמשיך?', async () => {
                 try {
-                    await fetch(`${API_URL}/topic_id/${catId}`, { method: 'DELETE' });
+                    const ok = await sheetdbDelete('topic_id', catId);
+                    if (!ok) throw new Error('המחיקה נכשלה בשרת');
                     closeCategoryModal();
                     showHome();
                     await fetchPosts();
@@ -1992,11 +2037,8 @@
 
             const newViews = num(mainPost.views) + 1;
             mainPost.views = newViews;
-            fetch(`${API_URL}/id/${mainPost.id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data: { views: newViews } })
-            }).catch(() => {});
+            // ניסיונות חוזרים: אם הנושא נפתח מיד אחרי יצירתו, השורה עשויה עדיין לא להיות "מוכרת" בחיפוש בצד השרת
+            sheetdbPatch('id', mainPost.id, { views: newViews });
         }
 
         function renderThreadHeader(mainPost, topicId) {
@@ -2148,14 +2190,8 @@
             if (currentTopicId) renderPosts(allPosts.filter(p => p.topic_id === currentTopicId));
 
             try {
-                const res = await fetch(`${API_URL}/id/${postId}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data: { likes, dislikes } })
-                });
-                // fetch לא נכשל על שגיאת HTTP (כמו 400/404/500) - חובה לבדוק res.ok במפורש,
-                // אחרת הצבעה שלא נשמרה בפועל בשרת "נעלמת" בחזרה לעמוד הבא
-                if (!res.ok) throw new Error('שמירת ההצבעה נכשלה בשרת');
+                const ok = await sheetdbPatch('id', postId, { likes, dislikes });
+                if (!ok) throw new Error('שמירת ההצבעה נכשלה בשרת');
             } catch (e) {
                 // כשל בשמירה - מחזירים את המצב המקומי לקדמותו כדי לא להטעות את המשתמש
                 post.likes = prevLikes;
@@ -2334,11 +2370,8 @@
             if (!newContent || !editingPostId) return;
 
             try {
-                await fetch(`${API_URL}/id/${editingPostId}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data: { content: newContent } })
-                });
+                const ok = await sheetdbPatch('id', editingPostId, { content: newContent });
+                if (!ok) throw new Error('העדכון נכשל בשרת');
 
                 closeEditModal();
                 await fetchPosts();
@@ -2352,7 +2385,8 @@
         function deletePost(id) {
             showConfirm('האם אתה בטוח שברצונך למחוק הודעה זו?', async () => {
                 try {
-                    await fetch(`${API_URL}/id/${id}`, { method: 'DELETE' });
+                    const ok = await sheetdbDelete('id', id);
+                    if (!ok) throw new Error('המחיקה נכשלה בשרת');
 
                     await fetchPosts();
                     if (currentTopicId) {
