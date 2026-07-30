@@ -1022,8 +1022,8 @@
         <a href="#" class="sidebar-icon active" id="nav-home" onclick="showHome(); return false;" title="דף הבית"><i class="fa-solid fa-house"></i></a>
         <a href="#" class="sidebar-icon" onclick="openNewTopicModal(); return false;" title="נושא חדש"><i class="fa-solid fa-pen-to-square"></i></a>
         <div class="sidebar-divider"></div>
-        <a href="#" class="sidebar-icon" id="nav-latest" onclick="togglePanel('latest'); return false;" title="נושאים אחרונים"><i class="fa-solid fa-clock"></i></a>
-        <a href="#" class="sidebar-icon" id="nav-popular" onclick="togglePanel('popular'); return false;" title="נושאים פופולריים"><i class="fa-solid fa-fire"></i></a>
+        <a href="#" class="sidebar-icon" id="nav-latest" onclick="location.hash = '#latest'; return false;" title="נושאים אחרונים"><i class="fa-solid fa-clock"></i></a>
+        <a href="#" class="sidebar-icon" id="nav-popular" onclick="location.hash = '#popular'; return false;" title="נושאים פופולריים"><i class="fa-solid fa-fire"></i></a>
         <a href="#" class="sidebar-icon" id="nav-users" onclick="togglePanel('users'); return false;" title="משתמשים"><i class="fa-solid fa-users"></i></a>
     </div>
 
@@ -1127,6 +1127,36 @@
                 <div class="profile-header" id="profile-header"></div>
                 <h3 style="margin-bottom: 12px; font-size: 15px; color: var(--text-muted);">נושאים ופוסטים אחרונים</h3>
                 <div id="profile-posts" class="topics-list"></div>
+            </div>
+
+            <!-- תצוגת נושאים אחרונים (עמוד מלא) -->
+            <div id="latest-view" class="thread-view">
+                <button class="btn-secondary" onclick="showHome()" style="margin-bottom: 15px;">
+                    <i class="fa-solid fa-arrow-right"></i> חזרה לרשימת הנושאים
+                </button>
+                <div class="thread-header">
+                    <div class="thread-header-top">
+                        <div><h2><i class="fa-solid fa-clock"></i> נושאים אחרונים</h2></div>
+                    </div>
+                </div>
+                <div id="latest-topics-container" class="topics-list">
+                    <div class="loader"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>טוען נושאים...</div>
+                </div>
+            </div>
+
+            <!-- תצוגת נושאים פופולריים (עמוד מלא) -->
+            <div id="popular-view" class="thread-view">
+                <button class="btn-secondary" onclick="showHome()" style="margin-bottom: 15px;">
+                    <i class="fa-solid fa-arrow-right"></i> חזרה לרשימת הנושאים
+                </button>
+                <div class="thread-header">
+                    <div class="thread-header-top">
+                        <div><h2><i class="fa-solid fa-fire"></i> נושאים פופולריים</h2></div>
+                    </div>
+                </div>
+                <div id="popular-topics-container" class="topics-list">
+                    <div class="loader"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>טוען נושאים...</div>
+                </div>
             </div>
 
         </div>
@@ -1667,9 +1697,7 @@
             }
             currentCategoryId = categoryId;
 
-            document.getElementById('home-view').style.display = 'none';
-            document.getElementById('thread-view').style.display = 'none';
-            document.getElementById('profile-view').style.display = 'none';
+            hideAllViews();
             document.getElementById('category-view').style.display = 'block';
             setActiveNav(null);
             closeSidebarPanel();
@@ -1890,11 +1918,18 @@
 
         /* ============ תצוגת נושא בודד ============ */
 
+        // כל התצוגות הראשיות של העמוד - שימוש מרכזי אחד כדי שלא נשכח תצוגה כשמוסיפים חדשה
+        const VIEW_IDS = ['home-view', 'thread-view', 'category-view', 'profile-view', 'latest-view', 'popular-view'];
+        function hideAllViews() {
+            VIEW_IDS.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+        }
+
         function showHome() {
+            hideAllViews();
             document.getElementById('home-view').style.display = 'block';
-            document.getElementById('thread-view').style.display = 'none';
-            document.getElementById('category-view').style.display = 'none';
-            document.getElementById('profile-view').style.display = 'none';
             currentTopicId = null;
             currentCategoryId = null;
             setActiveNav('nav-home');
@@ -1916,9 +1951,8 @@
             }
             currentTopicId = topicId;
 
-            document.getElementById('home-view').style.display = 'none';
+            hideAllViews();
             document.getElementById('thread-view').style.display = 'block';
-            document.getElementById('profile-view').style.display = 'none';
             setActiveNav(null);
             closeSidebarPanel();
 
@@ -2087,37 +2121,50 @@
             if (!post) return;
 
             const current = getVoteState(postId);
-            let likes = num(post.likes), dislikes = num(post.dislikes);
+            const prevLikes = num(post.likes), prevDislikes = num(post.dislikes);
+            let likes = prevLikes, dislikes = prevDislikes;
 
             if (current === type) {
                 // ביטול הצבעה
                 if (type === 'like') likes--; else dislikes--;
-                setVoteState(postId, null);
             } else {
                 if (current === 'like') likes--;
                 if (current === 'dislike') dislikes--;
                 if (type === 'like') likes++; else dislikes++;
-                setVoteState(postId, type);
             }
             likes = Math.max(0, likes);
             dislikes = Math.max(0, dislikes);
+            const newVoteState = (current === type) ? null : type;
 
+            // עדכון אופטימי מיידי בממשק, לפני שהשמירה בשרת חוזרת
             post.likes = likes;
             post.dislikes = dislikes;
-            document.getElementById('like-count-' + postId).innerText = likes;
-            document.getElementById('dislike-count-' + postId).innerText = dislikes;
+            setVoteState(postId, newVoteState);
 
-            const posts = allPosts.filter(p => p.topic_id === currentTopicId);
-            renderPosts(posts);
+            const likeEl = document.getElementById('like-count-' + postId);
+            const dislikeEl = document.getElementById('dislike-count-' + postId);
+            if (likeEl) likeEl.innerText = likes;
+            if (dislikeEl) dislikeEl.innerText = dislikes;
+            if (currentTopicId) renderPosts(allPosts.filter(p => p.topic_id === currentTopicId));
 
             try {
-                await fetch(`${API_URL}/id/${postId}`, {
+                const res = await fetch(`${API_URL}/id/${postId}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ data: { likes, dislikes } })
                 });
+                // fetch לא נכשל על שגיאת HTTP (כמו 400/404/500) - חובה לבדוק res.ok במפורש,
+                // אחרת הצבעה שלא נשמרה בפועל בשרת "נעלמת" בחזרה לעמוד הבא
+                if (!res.ok) throw new Error('שמירת ההצבעה נכשלה בשרת');
             } catch (e) {
-                showToast('שגיאה בשמירת ההצבעה', 'error');
+                // כשל בשמירה - מחזירים את המצב המקומי לקדמותו כדי לא להטעות את המשתמש
+                post.likes = prevLikes;
+                post.dislikes = prevDislikes;
+                setVoteState(postId, current);
+                if (likeEl) likeEl.innerText = prevLikes;
+                if (dislikeEl) dislikeEl.innerText = prevDislikes;
+                if (currentTopicId) renderPosts(allPosts.filter(p => p.topic_id === currentTopicId));
+                showToast('שגיאה בשמירת ההצבעה, נסו שוב', 'error');
             }
         }
 
@@ -2323,7 +2370,8 @@
             });
         }
 
-        /* ============ פאנל צד: אחרונים / פופולריים / משתמשים ============ */
+        /* ============ פאנל צד: משתמשים ============ */
+        /* נושאים אחרונים / פופולריים עברו לתצוגת עמוד מלא (ראו openLatestView / openPopularView למטה) */
 
         function togglePanel(kind) {
             if (currentPanel === kind) {
@@ -2338,38 +2386,7 @@
             const content = document.getElementById('panel-content');
             content.innerHTML = '';
 
-            if (kind === 'latest') {
-                document.getElementById('panel-title').innerText = 'נושאים אחרונים';
-                const topicsMap = getTopicsMap();
-                const ids = Object.keys(topicsMap).sort((a, b) => {
-                    const la = topicsMap[a][topicsMap[a].length - 1];
-                    const lb = topicsMap[b][topicsMap[b].length - 1];
-                    return (lb.created_at || '').localeCompare(la.created_at || '') || (b > a ? 1 : -1);
-                });
-                if (ids.length === 0) content.innerHTML = '<div class="panel-empty">אין עדיין נושאים</div>';
-                ids.slice(0, 15).forEach(id => {
-                    const main = topicsMap[id][0];
-                    const item = document.createElement('div');
-                    item.className = 'panel-item';
-                    item.onclick = () => { location.hash = '#topic/' + id; };
-                    item.innerHTML = `<img src="${main.author_avatar || 'https://via.placeholder.com/34'}"><div><div class="panel-item-title">${escapeHtml(main.title)}</div><div class="panel-item-sub">${escapeHtml(main.author_name)}</div></div>`;
-                    content.appendChild(item);
-                });
-            } else if (kind === 'popular') {
-                document.getElementById('panel-title').innerText = 'נושאים פופולריים';
-                const topicsMap = getTopicsMap();
-                const ids = Object.keys(topicsMap).sort((a, b) => topicScore(topicsMap[b]) - topicScore(topicsMap[a]));
-                if (ids.length === 0) content.innerHTML = '<div class="panel-empty">אין עדיין נושאים</div>';
-                ids.slice(0, 15).forEach(id => {
-                    const posts = topicsMap[id];
-                    const main = posts[0];
-                    const item = document.createElement('div');
-                    item.className = 'panel-item';
-                    item.onclick = () => { location.hash = '#topic/' + id; };
-                    item.innerHTML = `<img src="${main.author_avatar || 'https://via.placeholder.com/34'}"><div><div class="panel-item-title">${escapeHtml(main.title)}</div><div class="panel-item-sub"><i class="fa-regular fa-eye"></i> ${num(main.views)} · <i class="fa-regular fa-comment"></i> ${posts.length - 1}</div></div>`;
-                    content.appendChild(item);
-                });
-            } else if (kind === 'users') {
+            if (kind === 'users') {
                 document.getElementById('panel-title').innerText = 'משתמשים רשומים';
                 if (!currentUser) {
                     content.innerHTML = '<div class="panel-empty">יש להתחבר כדי לראות את רשימת המשתמשים</div>';
@@ -2396,6 +2413,83 @@
             else setActiveNav(null);
         }
 
+        /* ============ תצוגות עמוד מלא: נושאים אחרונים / פופולריים ============ */
+
+        // בונה כרטיס נושא ומכניס אותו למיכל נתון - נעשה בו שימוש גם בקטגוריה, גם באחרונים וגם בפופולריים
+        function renderTopicsListInto(containerId, topicIds, topicsMap, opts = {}) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (topicIds.length === 0) {
+                container.innerHTML = `<div class="loader">${opts.emptyText || 'אין עדיין נושאים'}</div>`;
+                return;
+            }
+
+            topicIds.forEach(topicId => {
+                const posts = topicsMap[topicId];
+                const mainPost = posts[0];
+                const replyCount = posts.length - 1;
+                const lastPost = posts[posts.length - 1];
+
+                const card = document.createElement('div');
+                card.className = 'topic-card';
+                card.onclick = () => { location.hash = '#topic/' + topicId; };
+                card.innerHTML = `
+                    <div class="topic-info">
+                        <img src="${mainPost.author_avatar || 'https://via.placeholder.com/40'}" class="topic-author-img" alt="">
+                        <div class="topic-details">
+                            <h3>${escapeHtml(mainPost.title || 'ללא כותרת')}</h3>
+                            <div class="topic-meta">
+                                <span class="badge-category">${escapeHtml(getCategoryName(mainPost.category))}</span>
+                                <span>נפתח על ידי <strong>${escapeHtml(mainPost.author_name)}</strong></span>
+                                <span>תגובה אחרונה: ${escapeHtml(lastPost.created_at || '')}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="topic-stats">
+                        <span><i class="fa-regular fa-eye"></i> ${num(mainPost.views)} צפיות</span>
+                        <span><i class="fa-regular fa-comment"></i> ${replyCount} תגובות</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function getLatestTopicIds(topicsMap) {
+            return Object.keys(topicsMap).sort((a, b) => {
+                const la = topicsMap[a][topicsMap[a].length - 1];
+                const lb = topicsMap[b][topicsMap[b].length - 1];
+                return (lb.created_at || '').localeCompare(la.created_at || '') || (b > a ? 1 : -1);
+            });
+        }
+
+        function getPopularTopicIds(topicsMap) {
+            return Object.keys(topicsMap).sort((a, b) => topicScore(topicsMap[b]) - topicScore(topicsMap[a]));
+        }
+
+        function openLatestView(fromHash) {
+            closeSidebarPanel();
+            hideAllViews();
+            document.getElementById('latest-view').style.display = 'block';
+            setActiveNav('nav-latest');
+            if (!fromHash) location.hash = '#latest';
+
+            const topicsMap = getTopicsMap();
+            renderTopicsListInto('latest-topics-container', getLatestTopicIds(topicsMap), topicsMap, { emptyText: 'אין עדיין נושאים' });
+        }
+
+        function openPopularView(fromHash) {
+            closeSidebarPanel();
+            hideAllViews();
+            document.getElementById('popular-view').style.display = 'block';
+            setActiveNav('nav-popular');
+            if (!fromHash) location.hash = '#popular';
+
+            const topicsMap = getTopicsMap();
+            renderTopicsListInto('popular-topics-container', getPopularTopicIds(topicsMap), topicsMap, { emptyText: 'אין עדיין נושאים' });
+        }
+
         /* ============ פרופיל משתמש ============ */
 
         function openUserProfile(uid) {
@@ -2406,8 +2500,7 @@
                 return;
             }
 
-            document.getElementById('home-view').style.display = 'none';
-            document.getElementById('thread-view').style.display = 'none';
+            hideAllViews();
             document.getElementById('profile-view').style.display = 'block';
             setActiveNav(null);
             closeSidebarPanel();
@@ -2470,12 +2563,75 @@
                 openThreadByPostId(id);
             } else if (type === 'user' && id) {
                 openUserProfile(id);
+            } else if (type === 'latest') {
+                openLatestView(true);
+            } else if (type === 'popular') {
+                openPopularView(true);
             } else {
                 showHome();
             }
         }
 
         window.addEventListener('hashchange', parseHash);
+
+        /* ============ רענון אוטומטי ברקע (בלי לקפוץ או לנווט) ============ */
+
+        const REFRESH_INTERVAL_MS = 6000;
+        let refreshTimer = null;
+        let refreshInFlight = false;
+
+        function isAnyModalOpen() {
+            return ['topic-modal', 'category-modal', 'edit-modal', 'confirm-modal'].some(id => {
+                const el = document.getElementById(id);
+                return el && el.style.display === 'flex';
+            });
+        }
+
+        function startAutoRefresh() {
+            if (refreshTimer) return;
+            refreshTimer = setInterval(silentRefresh, REFRESH_INTERVAL_MS);
+        }
+
+        // מרענן נתונים מהשרת ומעדכן רק את התוכן של התצוגה הפעילה כרגע,
+        // בלי לנווט בין מסכים, בלי לאבד קלט בטפסים, ובלי לשנות את מיקום הגלילה
+        async function silentRefresh() {
+            if (refreshInFlight) return;
+            if (isAnyModalOpen()) return; // לא לרענן באמצע עריכה/יצירה כדי לא לאבד קלט
+
+            refreshInFlight = true;
+            try {
+                const res = await fetch(API_URL);
+                if (!res.ok) return;
+                allPosts = await res.json();
+            } catch (e) {
+                return;
+            } finally {
+                refreshInFlight = false;
+            }
+
+            const scrollY = window.scrollY;
+
+            if (document.getElementById('home-view').style.display !== 'none') {
+                renderCategoriesGrid();
+            } else if (document.getElementById('thread-view').style.display !== 'none' && currentTopicId) {
+                const posts = allPosts.filter(p => p.topic_id === currentTopicId);
+                if (posts.length === 0) { showHome(); return; }
+                renderThreadHeader(posts[0], currentTopicId);
+                renderPosts(posts);
+            } else if (document.getElementById('category-view').style.display !== 'none' && currentCategoryId) {
+                const topicsMap = getTopicsMap();
+                const topicIds = Object.keys(topicsMap).filter(tid => topicsMap[tid][0].category === currentCategoryId).reverse();
+                renderTopicsListInto('category-topics-container', topicIds, topicsMap, { emptyText: 'אין עדיין נושאים בקטגוריה זו. פתחו נושא חדש!' });
+            } else if (document.getElementById('latest-view').style.display !== 'none') {
+                const topicsMap = getTopicsMap();
+                renderTopicsListInto('latest-topics-container', getLatestTopicIds(topicsMap), topicsMap, { emptyText: 'אין עדיין נושאים' });
+            } else if (document.getElementById('popular-view').style.display !== 'none') {
+                const topicsMap = getTopicsMap();
+                renderTopicsListInto('popular-topics-container', getPopularTopicIds(topicsMap), topicsMap, { emptyText: 'אין עדיין נושאים' });
+            }
+
+            window.scrollTo(0, scrollY);
+        }
 
         /* ============ אתחול העמוד ============ */
 
@@ -2489,6 +2645,7 @@
             buildToolbar('reply-toolbar', 'reply-input');
             buildToolbar('edit-toolbar', 'edit-content');
             fetchPosts();
+            startAutoRefresh();
         };
     </script>
 </body>
