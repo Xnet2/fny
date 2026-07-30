@@ -301,6 +301,31 @@
             margin-top: 2px;
         }
 
+        .tag-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            cursor: pointer;
+            transition: transform 0.1s, border-color 0.2s;
+        }
+
+        .tag-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .tag-card-count {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
         /* אזור תוכן מרכזי */
         .main-wrapper {
             margin-right: 70px;
@@ -395,7 +420,7 @@
 
         /* באנר ברכה NodeBB */
         .welcome-card {
-            background: #ffffff;
+            background: linear-gradient(135deg, #ffffff 60%, var(--primary-light) 150%);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 24px;
@@ -404,6 +429,20 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-card::after {
+            content: '';
+            position: absolute;
+            left: -30px;
+            top: -30px;
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--brand-a), var(--brand-b));
+            opacity: 0.08;
         }
 
         .welcome-card h2 {
@@ -457,29 +496,43 @@
             font-size: 12px;
         }
 
-        /* רשימת נושאים */
+        /* רשימת נושאים - שורות שטוחות בסגנון NodeBB, בתוך כרטיס אחד */
         .topics-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .topics-list .loader, .topics-list .panel-empty {
+            background: var(--bg-card);
         }
 
         .topic-card {
             background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 16px 20px;
-            box-shadow: var(--shadow);
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 0;
+            padding: 14px 20px;
+            box-shadow: none;
             display: flex;
             align-items: center;
             gap: 16px;
             cursor: pointer;
-            transition: transform 0.1s, border-color 0.2s;
+            transition: background 0.12s;
+        }
+
+        .topic-card:last-child {
+            border-bottom: none;
         }
 
         .topic-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-1px);
+            background: #f8fafc;
+            border-color: var(--border-color);
+            transform: none;
         }
 
         .topic-info {
@@ -502,18 +555,22 @@
         }
 
         .topic-details h3 {
-            font-size: 16px;
+            font-size: 15.5px;
             font-weight: 700;
             margin-bottom: 4px;
-            color: #78862e;
+            color: #4b7c6f;
             line-height: 1.35;
+        }
+
+        .topic-card:hover .topic-details h3 {
+            color: var(--primary-hover);
         }
 
         .topic-meta {
             font-size: 12px;
             color: var(--text-muted);
             display: flex;
-            gap: 12px;
+            gap: 8px;
             align-items: center;
             flex-wrap: wrap;
         }
@@ -528,28 +585,25 @@
 
         .topic-stats-row {
             display: flex;
-            gap: 8px;
+            gap: 18px;
             flex-shrink: 0;
         }
 
         .stat-box {
-            background: #f3f4f6;
-            border-radius: 8px;
-            padding: 8px 12px;
             text-align: center;
-            min-width: 56px;
+            min-width: 46px;
         }
 
         .stat-box strong {
             display: block;
-            font-size: 15px;
+            font-size: 14px;
             color: var(--text-main);
             font-weight: 700;
         }
 
         .stat-box span {
             display: block;
-            font-size: 11px;
+            font-size: 10.5px;
             color: var(--text-muted);
             margin-top: 2px;
         }
@@ -597,7 +651,7 @@
 
         @media (max-width: 560px) {
             .topic-thumb { display: none; }
-            .stat-box { min-width: 44px; padding: 6px 8px; }
+            .stat-box { min-width: 38px; }
         }
 
         .badge-category {
@@ -607,6 +661,13 @@
             border-radius: 12px;
             font-size: 11px;
             font-weight: 500;
+        }
+
+        .tag-chip {
+            padding: 2px 9px;
+            border-radius: 12px;
+            font-size: 10.5px;
+            font-weight: 600;
         }
 
         .badge-admin {
@@ -653,26 +714,39 @@
         .categories-grid {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .categories-grid .loader, .categories-grid .category-empty-state {
+            background: var(--bg-card);
         }
 
         .category-card {
             background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px 22px;
-            box-shadow: var(--shadow);
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 0;
+            padding: 18px 22px;
+            box-shadow: none;
             display: flex;
             align-items: center;
             gap: 20px;
             cursor: pointer;
             position: relative;
-            transition: border-color 0.15s, transform 0.1s;
+            transition: background 0.12s;
+        }
+
+        .category-card:last-child {
+            border-bottom: none;
         }
 
         .category-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-1px);
+            background: #f8fafc;
+            transform: none;
         }
 
         .category-icon {
@@ -1276,6 +1350,7 @@
         <a href="#" class="sidebar-icon" id="nav-latest" onclick="location.hash = '#latest'; return false;" title="נושאים אחרונים"><i class="fa-solid fa-clock"></i></a>
         <a href="#" class="sidebar-icon" id="nav-popular" onclick="location.hash = '#popular'; return false;" title="נושאים פופולריים"><i class="fa-solid fa-fire"></i></a>
         <a href="#" class="sidebar-icon" id="nav-users" onclick="location.hash = '#users'; return false;" title="משתמשים"><i class="fa-solid fa-users"></i></a>
+        <a href="#" class="sidebar-icon" id="nav-tags" onclick="location.hash = '#tags'; return false;" title="תגיות"><i class="fa-solid fa-tag"></i></a>
     </div>
 
     <!-- פאנל נגלל -->
@@ -1437,6 +1512,32 @@
                 </div>
             </div>
 
+            <!-- תצוגת כל התגיות -->
+            <div id="tags-view" class="thread-view">
+                <button class="btn-secondary" onclick="showHome()" style="margin-bottom: 15px;">
+                    <i class="fa-solid fa-arrow-right"></i> חזרה לרשימת הנושאים
+                </button>
+                <h2 style="margin-bottom: 16px;"><i class="fa-solid fa-tag"></i> כל התגיות</h2>
+                <div id="tags-grid-container" class="users-grid">
+                    <div class="loader"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>טוען תגיות...</div>
+                </div>
+            </div>
+
+            <!-- תצוגת נושאים לפי תגית -->
+            <div id="tag-view" class="thread-view">
+                <button class="btn-secondary" onclick="location.hash = '#tags'" style="margin-bottom: 15px;">
+                    <i class="fa-solid fa-arrow-right"></i> חזרה לתגיות
+                </button>
+                <div class="thread-header">
+                    <div class="thread-header-top">
+                        <div><h2><i class="fa-solid fa-tag"></i> <span id="tag-view-title"></span></h2></div>
+                    </div>
+                </div>
+                <div id="tag-topics-container" class="topics-list">
+                    <div class="loader"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>טוען נושאים...</div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -1453,6 +1554,9 @@
 
                 <label>קטגוריה:</label>
                 <select id="new-topic-category"></select>
+
+                <label>תגיות (מופרדות בפסיק, לא חובה):</label>
+                <input type="text" id="new-topic-tags" placeholder="לדוגמה: עזרה, דחוף, שאלה">
 
                 <label>תוכן ההודעה:</label>
                 <div class="editor-toolbar" id="new-topic-toolbar"></div>
@@ -1635,6 +1739,7 @@
         let allPosts = [];
         let currentTopicId = null;
         let currentCategoryId = null;
+        let currentTagFilter = null;
         let editingCategoryId = null;
         let selectedCategoryIcon = DEFAULT_ICON;
         let currentPanel = null;
@@ -1675,6 +1780,49 @@
             const bg = avatarColor(seed || name);
             const fontSize = Math.round(size * 0.42);
             return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:${fontSize}px;flex-shrink:0;" ${extraAttrs}>${letter}</div>`;
+        }
+
+        /* ============ עזר: תגיות ============ */
+
+        function parseTags(str) {
+            if (!str) return [];
+            return String(str).split(',').map(t => t.trim()).filter(Boolean);
+        }
+
+        function tagColor(tag) {
+            const palette = [
+                { bg: '#dcfce7', color: '#15803d' },
+                { bg: '#ffedd5', color: '#c2410c' },
+                { bg: '#ede9fe', color: '#6d28d9' },
+                { bg: '#e0f2fe', color: '#0369a1' },
+                { bg: '#fce7f3', color: '#be185d' },
+                { bg: '#fef9c3', color: '#a16207' },
+                { bg: '#f1f5f9', color: '#475569' }
+            ];
+            let hash = 0;
+            for (let i = 0; i < tag.length; i++) hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+            return palette[Math.abs(hash) % palette.length];
+        }
+
+        function tagChipsHtml(tagsStr) {
+            const tags = parseTags(tagsStr);
+            if (tags.length === 0) return '';
+            return tags.map(t => {
+                const c = tagColor(t);
+                return `<span class="tag-chip" style="background:${c.bg};color:${c.color};cursor:pointer;" onclick="event.stopPropagation(); location.hash='#tag/' + encodeURIComponent('${t.replace(/'/g, "\\'")}')">${escapeHtml(t)}</span>`;
+            }).join('');
+        }
+
+        function getAllTagsWithCounts() {
+            const counts = {};
+            const topicsMap = getTopicsMap();
+            Object.keys(topicsMap).forEach(tid => {
+                const main = topicsMap[tid][0];
+                parseTags(main.tags).forEach(t => {
+                    counts[t] = (counts[t] || 0) + 1;
+                });
+            });
+            return Object.keys(counts).map(t => ({ tag: t, count: counts[t] })).sort((a, b) => b.count - a.count);
         }
 
         function findUserByUid(uid) {
@@ -2315,7 +2463,7 @@
         /* ============ תצוגת נושא בודד ============ */
 
         // כל התצוגות הראשיות של העמוד - שימוש מרכזי אחד כדי שלא נשכח תצוגה כשמוסיפים חדשה
-        const VIEW_IDS = ['home-view', 'thread-view', 'category-view', 'profile-view', 'latest-view', 'popular-view', 'users-view'];
+        const VIEW_IDS = ['home-view', 'thread-view', 'category-view', 'profile-view', 'latest-view', 'popular-view', 'users-view', 'tags-view', 'tag-view'];
         function hideAllViews() {
             VIEW_IDS.forEach(id => {
                 const el = document.getElementById(id);
@@ -2479,6 +2627,7 @@
                     <div>
                         <div class="topic-meta" style="margin-bottom: 8px;">
                             <span class="badge-category">${escapeHtml(mainPost.category || 'כללי')}</span>
+                            ${tagChipsHtml(mainPost.tags)}
                             ${isPinned(mainPost) ? '<span class="badge-pinned"><i class="fa-solid fa-thumbtack"></i> מוצמד</span>' : ''}
                             <span><i class="fa-regular fa-eye"></i> ${num(mainPost.views)} צפיות</span>
                         </div>
@@ -2700,6 +2849,7 @@
         async function submitNewTopic() {
             const title = document.getElementById('new-topic-title').value.trim();
             const category = document.getElementById('new-topic-category').value;
+            const tags = document.getElementById('new-topic-tags').value.trim();
             const content = document.getElementById('new-topic-content').value.trim();
 
             if (!title || !content) {
@@ -2713,6 +2863,7 @@
                 topic_id: newTopicId,
                 title: title,
                 category: category,
+                tags: tags,
                 author_name: currentUser.name,
                 author_email: currentUser.email,
                 author_avatar: currentUser.picture,
@@ -2733,6 +2884,7 @@
                 });
 
                 document.getElementById('new-topic-title').value = '';
+                document.getElementById('new-topic-tags').value = '';
                 document.getElementById('new-topic-content').value = '';
                 await fetchPosts();
                 location.hash = '#topic/' + newTopicId;
@@ -2952,6 +3104,58 @@
             });
         }
 
+        /* ============ תצוגות תגיות ============ */
+
+        function openTagsView(fromHash) {
+            hideAllViews();
+            document.getElementById('tags-view').style.display = 'block';
+            setActiveNav('nav-tags');
+            closeSidebarPanel();
+            if (!fromHash) location.hash = '#tags';
+            renderTagsGrid();
+        }
+
+        function renderTagsGrid() {
+            const container = document.getElementById('tags-grid-container');
+            if (!container) return;
+            const tags = getAllTagsWithCounts();
+            container.innerHTML = '';
+            if (tags.length === 0) {
+                container.innerHTML = '<div class="panel-empty">אין עדיין תגיות בפורום</div>';
+                return;
+            }
+            tags.forEach(t => {
+                const c = tagColor(t.tag);
+                const card = document.createElement('div');
+                card.className = 'tag-card';
+                card.onclick = () => { location.hash = '#tag/' + encodeURIComponent(t.tag); };
+                card.innerHTML = `
+                    <span class="tag-chip" style="background:${c.bg};color:${c.color};font-size:13px;">${escapeHtml(t.tag)}</span>
+                    <span class="tag-card-count">${t.count} נושאים</span>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function openTagView(tagName, fromHash) {
+            hideAllViews();
+            document.getElementById('tag-view').style.display = 'block';
+            setActiveNav('nav-tags');
+            closeSidebarPanel();
+            if (!fromHash) location.hash = '#tag/' + encodeURIComponent(tagName);
+
+            document.getElementById('tag-view-title').innerText = tagName;
+            currentTagFilter = tagName;
+            renderTagTopics();
+        }
+
+        function renderTagTopics() {
+            if (!currentTagFilter) return;
+            const topicsMap = getTopicsMap();
+            const topicIds = Object.keys(topicsMap).filter(tid => parseTags(topicsMap[tid][0].tags).includes(currentTagFilter));
+            renderTopicsListInto('tag-topics-container', topicIds, topicsMap, { emptyText: 'אין נושאים עם תגית זו' });
+        }
+
         /* ============ תצוגות עמוד מלא: נושאים אחרונים / פופולריים ============ */
 
         // בונה כרטיס נושא ומכניס אותו למיכל נתון - נעשה בו שימוש גם בקטגוריה, גם באחרונים וגם בפופולריים
@@ -2986,6 +3190,7 @@
                             <h3>${isPinned(mainPost) ? '<span class="badge-pinned"><i class="fa-solid fa-thumbtack"></i> מוצמד</span> ' : ''}${escapeHtml(mainPost.title || 'ללא כותרת')}</h3>
                             <div class="topic-meta">
                                 <span class="badge-category">${escapeHtml(getCategoryName(mainPost.category))}</span>
+                                ${tagChipsHtml(mainPost.tags)}
                                 <span>${timeAgo(mainPost.created_at)}</span>
                             </div>
                         </div>
@@ -3122,6 +3327,10 @@
                 openPopularView(true);
             } else if (type === 'users') {
                 openUsersView(true);
+            } else if (type === 'tags') {
+                openTagsView(true);
+            } else if (type === 'tag' && id) {
+                openTagView(decodeURIComponent(id), true);
             } else {
                 showHome();
             }
@@ -3197,6 +3406,10 @@
                 renderTopicsListInto('popular-topics-container', getPopularTopicIds(topicsMap), topicsMap, { emptyText: 'אין עדיין נושאים' });
             } else if (document.getElementById('users-view').style.display !== 'none') {
                 renderUsersGrid();
+            } else if (document.getElementById('tags-view').style.display !== 'none') {
+                renderTagsGrid();
+            } else if (document.getElementById('tag-view').style.display !== 'none') {
+                renderTagTopics();
             }
 
             window.scrollTo(0, scrollY);
