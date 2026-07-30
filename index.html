@@ -1249,7 +1249,8 @@
     <div class="toast-container" id="toast-container"></div>
 
     <script>
-        const API_URL = "https://sheetdb.io/api/v1/t9q5wwl0psz88";
+        // הדביקו כאן את קישור ה-Web App שקיבלתם אחרי פריסת ה-Apps Script (מסתיים ב-/exec)
+        const API_URL = "https://script.google.com/macros/s/AKfycbx6TbORKoj_XXmOnbigtFQGc8Dmt94acTbOdb5pnEZ9YfYVlQJ2CeFrfFqb8GzGXEaD/exec";
         const ADMIN_EMAIL = "dh058328@gmail.com";
         const CATEGORY_PREFIX = 'cat_';
         const DEFAULT_ICON = 'fa-comments';
@@ -1264,7 +1265,7 @@
         async function debugCheckColumnExists(column) {
             try {
                 if (!sheetColumnsCache) {
-                    const res = await fetch(`${API_URL}/keys`);
+                    const res = await fetch(`${API_URL}?keys=1`);
                     if (res.ok) sheetColumnsCache = await res.json();
                 }
                 if (Array.isArray(sheetColumnsCache)) {
@@ -1287,17 +1288,20 @@
             const delayMs = opts.delayMs ?? 800;
             for (let attempt = 0; attempt <= retries; attempt++) {
                 try {
-                    const res = await fetch(`${API_URL}/${column}/${encodeURIComponent(value)}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data })
+                    const res = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ action: 'update', column, value, data })
                     });
-                    if (res.ok) return true;
-                    if (res.status === 404 && attempt < retries) { await wait(delayMs); continue; }
-                    if (res.status === 404) {
-                        console.warn(`[פורום] PATCH ${column}=${value} החזיר 404 אחרי ${retries + 1} ניסיונות.`);
+                    if (res.ok) {
+                        const json = await res.json();
+                        if (json && json.updated > 0) return true;
+                        if (attempt < retries) { await wait(delayMs); continue; }
+                        console.warn(`[פורום] PATCH ${column}=${value} לא מצא שורה תואמת אחרי ${retries + 1} ניסיונות.`);
                         debugCheckColumnExists(column);
+                        return false;
                     }
+                    if (attempt < retries) { await wait(delayMs); continue; }
                     return false;
                 } catch (e) {
                     if (attempt < retries) { await wait(delayMs); continue; }
@@ -1313,9 +1317,18 @@
             const delayMs = opts.delayMs ?? 800;
             for (let attempt = 0; attempt <= retries; attempt++) {
                 try {
-                    const res = await fetch(`${API_URL}/${column}/${encodeURIComponent(value)}`, { method: 'DELETE' });
-                    if (res.ok) return true;
-                    if (res.status === 404 && attempt < retries) { await wait(delayMs); continue; }
+                    const res = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ action: 'delete', column, value })
+                    });
+                    if (res.ok) {
+                        const json = await res.json();
+                        if (json && json.deleted > 0) return true;
+                        if (attempt < retries) { await wait(delayMs); continue; }
+                        return false;
+                    }
+                    if (attempt < retries) { await wait(delayMs); continue; }
                     return false;
                 } catch (e) {
                     if (attempt < retries) { await wait(delayMs); continue; }
@@ -1607,12 +1620,15 @@
         async function fetchPosts() {
             try {
                 const res = await fetch(API_URL);
-                allPosts = await res.json();
+                const json = await res.json();
+                if (!Array.isArray(json)) throw new Error('התקבלה תשובה לא תקינה מהשרת: ' + JSON.stringify(json));
+                allPosts = json;
 
                 const created = await ensureDefaultCategories();
                 if (created) {
                     const res2 = await fetch(API_URL);
-                    allPosts = await res2.json();
+                    const json2 = await res2.json();
+                    if (Array.isArray(json2)) allPosts = json2;
                 }
 
                 renderCategoriesGrid();
@@ -1685,8 +1701,8 @@
             try {
                 await fetch(API_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data: rows })
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'insert', data: rows })
                 });
                 return true;
             } catch (err) {
@@ -1906,8 +1922,8 @@
                     };
                     await fetch(API_URL, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data: [newCat] })
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ action: 'insert', data: [newCat] })
                     });
                     showToast('הקטגוריה נוצרה בהצלחה', 'success');
                 }
@@ -2315,8 +2331,8 @@
             try {
                 await fetch(API_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data: [newPost] })
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'insert', data: [newPost] })
                 });
 
                 document.getElementById('new-topic-title').value = '';
@@ -2362,8 +2378,8 @@
             try {
                 await fetch(API_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data: [replyPost] })
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'insert', data: [replyPost] })
                 });
 
                 await fetchPosts();
@@ -2650,6 +2666,16 @@
             refreshTimer = setInterval(silentRefresh, REFRESH_INTERVAL_MS);
         }
 
+        // עוצרים את הרענון כשהטאב לא פעיל, וממשיכים כשחוזרים אליו
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+            } else {
+                startAutoRefresh();
+                silentRefresh();
+            }
+        });
+
         // מרענן נתונים מהשרת ומעדכן רק את התוכן של התצוגה הפעילה כרגע,
         // בלי לנווט בין מסכים, בלי לאבד קלט בטפסים, ובלי לשנות את מיקום הגלילה
         async function silentRefresh() {
@@ -2660,7 +2686,9 @@
             try {
                 const res = await fetch(API_URL);
                 if (!res.ok) return;
-                allPosts = await res.json();
+                const json = await res.json();
+                if (!Array.isArray(json)) return; // תשובה לא תקינה - משאירים את הנתונים הקודמים
+                allPosts = json;
             } catch (e) {
                 return;
             } finally {
