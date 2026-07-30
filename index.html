@@ -383,6 +383,22 @@
             font-weight: 500;
         }
 
+        .badge-pinned {
+            background: #fef3c7;
+            color: #b45309;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .reply-restricted-notice {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+            padding: 16px;
+        }
+
         .topic-stats {
             text-align: left;
             color: var(--text-muted);
@@ -1107,7 +1123,7 @@
                 <div id="posts-container"></div>
 
                 <!-- תיבת תגובה -->
-                <div class="reply-box">
+                <div class="reply-box" id="reply-box">
                     <h3 style="font-size: 16px;">הוספת תגובה</h3>
                     <div class="reply-quote-preview" id="reply-quote-preview">
                         <span id="reply-quote-text"></span>
@@ -1116,6 +1132,9 @@
                     <div class="editor-toolbar" id="reply-toolbar"></div>
                     <textarea id="reply-input" rows="4" placeholder="כתוב את תגובתך כאן..."></textarea>
                     <button class="btn-primary" onclick="submitReply()">שלח תגובה</button>
+                </div>
+                <div class="reply-box reply-restricted-notice" id="reply-restricted-notice" style="display:none;">
+                    <i class="fa-solid fa-lock"></i> הכתיבה בנושא זה מוגבלת למשתמשים מורשים בלבד.
                 </div>
             </div>
 
@@ -1651,6 +1670,13 @@
             return topicsMap;
         }
 
+        // מסדר רשימת topicIds כך שנושאים מוצמדים יופיעו קודם (מהחדש לישן בתוך כל קבוצה)
+        function sortTopicIdsWithPinned(topicIds, topicsMap) {
+            const pinnedIds = topicIds.filter(tid => isPinned(topicsMap[tid][0])).reverse();
+            const normalIds = topicIds.filter(tid => !isPinned(topicsMap[tid][0])).reverse();
+            return [...pinnedIds, ...normalIds];
+        }
+
         /* ============ ניהול קטגוריות ============ */
 
         // קטגוריות מאוחסנות כשורות רגילות באותה טבלה, מזוהות לפי topic_id שמתחיל ב-CATEGORY_PREFIX
@@ -1813,7 +1839,7 @@
                 return;
             }
 
-            topicIds.reverse().forEach(topicId => {
+            sortTopicIdsWithPinned(topicIds, topicsMap).forEach(topicId => {
                 const posts = topicsMap[topicId];
                 const mainPost = posts[0];
                 const replyCount = posts.length - 1;
@@ -1826,7 +1852,7 @@
                     <div class="topic-info">
                         <img src="${mainPost.author_avatar || 'https://via.placeholder.com/40'}" class="topic-author-img" alt="">
                         <div class="topic-details">
-                            <h3>${escapeHtml(mainPost.title || 'ללא כותרת')}</h3>
+                            <h3>${isPinned(mainPost) ? '<span class="badge-pinned"><i class="fa-solid fa-thumbtack"></i> מוצמד</span> ' : ''}${escapeHtml(mainPost.title || 'ללא כותרת')}</h3>
                             <div class="topic-meta">
                                 <span>נפתח על ידי <strong>${escapeHtml(mainPost.author_name)}</strong></span>
                                 <span>תגובה אחרונה: ${escapeHtml(lastPost.created_at || '')}</span>
@@ -2081,19 +2107,105 @@
             sheetdbPatch('id', mainPost.id, { views: newViews });
         }
 
+        function isPinned(post) {
+            return String(post && post.pinned) === '1';
+        }
+
+        function getAllowedEmailsList(post) {
+            return String((post && post.allowed_emails) || '')
+                .split(',')
+                .map(e => e.trim().toLowerCase())
+                .filter(Boolean);
+        }
+
+        // בודק אם המשתמש הנוכחי מורשה להגיב לנושא הזה.
+        // אם לא הוגדרה רשימת הרשאות לנושא - כל משתמש מחובר יכול להגיב (ברירת המחדל הרגילה).
+        function canReplyToTopic(mainPost) {
+            if (!mainPost) return true;
+            const list = getAllowedEmailsList(mainPost);
+            if (list.length === 0) return true;
+            if (currentUser && currentUser.isAdmin) return true;
+            if (!currentUser) return false;
+            return list.includes(String(currentUser.email).toLowerCase());
+        }
+
+        function updateReplyAccessUI(mainPost) {
+            const box = document.getElementById('reply-box');
+            const notice = document.getElementById('reply-restricted-notice');
+            if (!box || !notice) return;
+            if (canReplyToTopic(mainPost)) {
+                box.style.display = '';
+                notice.style.display = 'none';
+            } else {
+                box.style.display = 'none';
+                notice.style.display = 'block';
+            }
+        }
+
+        async function togglePinTopic(topicId) {
+            if (!currentUser || !currentUser.isAdmin) return;
+            const mainPost = allPosts.find(p => p.topic_id === topicId && p.title);
+            if (!mainPost) return;
+            const newValue = isPinned(mainPost) ? '' : '1';
+            const ok = await sheetdbPatch('topic_id', topicId, { pinned: newValue });
+            if (!ok) {
+                showToast('שגיאה בעדכון ההצמדה', 'error');
+                return;
+            }
+            mainPost.pinned = newValue;
+            showToast(newValue ? 'הנושא הוצמד לראש הקטגוריה' : 'ההצמדה בוטלה', 'success');
+            renderThreadHeader(mainPost, topicId);
+        }
+
+        async function manageTopicAccess(topicId) {
+            if (!currentUser || !currentUser.isAdmin) return;
+            const mainPost = allPosts.find(p => p.topic_id === topicId && p.title);
+            if (!mainPost) return;
+            const current = (mainPost.allowed_emails || '').toString();
+            const input = window.prompt(
+                'הזינו כתובות אימייל (מופרדות בפסיקים) של המשתמשים היחידים שמורשים לכתוב בנושא זה.\nהשאירו ריק כדי לאפשר לכולם להגיב כרגיל.',
+                current
+            );
+            if (input === null) return; // בוטל
+            const cleaned = input.split(',').map(e => e.trim()).filter(Boolean).join(', ');
+            const ok = await sheetdbPatch('topic_id', topicId, { allowed_emails: cleaned });
+            if (!ok) {
+                showToast('שגיאה בעדכון ההרשאות', 'error');
+                return;
+            }
+            mainPost.allowed_emails = cleaned;
+            showToast(cleaned ? 'הכתיבה בנושא הוגבלה למשתמשים שנבחרו' : 'הכתיבה בנושא פתוחה לכולם', 'success');
+            renderThreadHeader(mainPost, topicId);
+            updateReplyAccessUI(mainPost);
+        }
+
         function renderThreadHeader(mainPost, topicId) {
+            const adminControls = (currentUser && currentUser.isAdmin) ? `
+                <button class="icon-btn" title="${isPinned(mainPost) ? 'בטל הצמדה' : 'הצמד נושא לראש הקטגוריה'}" onclick="togglePinTopic('${topicId}')">
+                    <i class="fa-solid fa-thumbtack" style="${isPinned(mainPost) ? 'color:var(--primary);' : ''}"></i>
+                </button>
+                <button class="icon-btn" title="הגבלת כתיבה בנושא למשתמשים נבחרים" onclick="manageTopicAccess('${topicId}')">
+                    <i class="fa-solid fa-user-lock" style="${getAllowedEmailsList(mainPost).length ? 'color:var(--primary);' : ''}"></i>
+                </button>
+            ` : '';
+
             document.getElementById('thread-header').innerHTML = `
                 <div class="thread-header-top">
                     <div>
                         <div class="topic-meta" style="margin-bottom: 8px;">
                             <span class="badge-category">${escapeHtml(mainPost.category || 'כללי')}</span>
+                            ${isPinned(mainPost) ? '<span class="badge-pinned"><i class="fa-solid fa-thumbtack"></i> מוצמד</span>' : ''}
                             <span><i class="fa-regular fa-eye"></i> ${num(mainPost.views)} צפיות</span>
                         </div>
                         <h2>${escapeHtml(mainPost.title)}</h2>
                     </div>
-                    <button class="icon-btn" title="העתק קישור לנושא" onclick="copyLink('topic', '${topicId}')"><i class="fa-solid fa-link"></i></button>
+                    <div>
+                        ${adminControls}
+                        <button class="icon-btn" title="העתק קישור לנושא" onclick="copyLink('topic', '${topicId}')"><i class="fa-solid fa-link"></i></button>
+                    </div>
                 </div>
             `;
+            updateReplyAccessUI(mainPost);
         }
 
         function getVoteState(postId) {
@@ -2351,6 +2463,12 @@
                 return;
             }
 
+            const mainPostForAccess = allPosts.find(p => p.topic_id === currentTopicId && p.title);
+            if (!canReplyToTopic(mainPostForAccess)) {
+                showToast('אין לך הרשאה לכתוב בנושא זה', 'error');
+                return;
+            }
+
             const input = document.getElementById('reply-input');
             const content = input.value.trim();
             if (!content) return;
@@ -2513,7 +2631,7 @@
                     <div class="topic-info">
                         <img src="${mainPost.author_avatar || 'https://via.placeholder.com/40'}" class="topic-author-img" alt="">
                         <div class="topic-details">
-                            <h3>${escapeHtml(mainPost.title || 'ללא כותרת')}</h3>
+                            <h3>${isPinned(mainPost) ? '<span class="badge-pinned"><i class="fa-solid fa-thumbtack"></i> מוצמד</span> ' : ''}${escapeHtml(mainPost.title || 'ללא כותרת')}</h3>
                             <div class="topic-meta">
                                 <span class="badge-category">${escapeHtml(getCategoryName(mainPost.category))}</span>
                                 <span>נפתח על ידי <strong>${escapeHtml(mainPost.author_name)}</strong></span>
@@ -2706,8 +2824,8 @@
                 renderPosts(posts);
             } else if (document.getElementById('category-view').style.display !== 'none' && currentCategoryId) {
                 const topicsMap = getTopicsMap();
-                const topicIds = Object.keys(topicsMap).filter(tid => topicsMap[tid][0].category === currentCategoryId).reverse();
-                renderTopicsListInto('category-topics-container', topicIds, topicsMap, { emptyText: 'אין עדיין נושאים בקטגוריה זו. פתחו נושא חדש!' });
+                const topicIds = Object.keys(topicsMap).filter(tid => topicsMap[tid][0].category === currentCategoryId);
+                renderTopicsListInto('category-topics-container', sortTopicIdsWithPinned(topicIds, topicsMap), topicsMap, { emptyText: 'אין עדיין נושאים בקטגוריה זו. פתחו נושא חדש!' });
             } else if (document.getElementById('latest-view').style.display !== 'none') {
                 const topicsMap = getTopicsMap();
                 renderTopicsListInto('latest-topics-container', getLatestTopicIds(topicsMap), topicsMap, { emptyText: 'אין עדיין נושאים' });
