@@ -310,6 +310,193 @@
             font-size: 12px;
         }
 
+        /* רשימת קטגוריות (עמוד הבית בסגנון NodeBB) */
+        .categories-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .category-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            cursor: pointer;
+            transition: transform 0.1s, border-color 0.2s;
+            position: relative;
+        }
+
+        .category-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .category-icon-box {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .category-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .category-info h3 {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-main);
+        }
+
+        .category-info p {
+            font-size: 13px;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .category-admin-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .category-stats {
+            display: flex;
+            gap: 22px;
+            flex-shrink: 0;
+            text-align: center;
+        }
+
+        .category-stats .stat-num {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .category-stats .stat-label {
+            font-size: 11.5px;
+            color: var(--text-muted);
+        }
+
+        .category-lastpost {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            width: 230px;
+            flex-shrink: 0;
+            border-right: 1px solid var(--border-color);
+            padding-right: 20px;
+        }
+
+        .category-lastpost img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            object-fit: cover;
+        }
+
+        .category-lastpost-text {
+            min-width: 0;
+        }
+
+        .category-lastpost-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .category-lastpost-meta {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .category-lastpost-empty {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        @media (min-width: 860px) {
+            .category-lastpost { display: flex; }
+        }
+
+        .add-category-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 14px;
+        }
+
+        .category-form-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .category-form-row > div {
+            flex: 1;
+        }
+
+        .icon-preview-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .icon-picker-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+            margin-bottom: 15px;
+        }
+
+        .icon-picker-row input[type="color"] {
+            width: 44px;
+            height: 44px;
+            padding: 2px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .icon-picker-row input[type="text"] {
+            margin: 0;
+        }
+
+        .category-header-block {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
         /* רשימת נושאים */
         .topics-list {
             display: flex;
@@ -858,7 +1045,7 @@
         <!-- תוכן ראשי -->
         <div class="container">
 
-            <!-- תצוגת רשימת נושאים (בית) -->
+            <!-- תצוגת רשימת קטגוריות (בית) -->
             <div id="home-view">
                 <div class="welcome-card">
                     <div>
@@ -868,15 +1055,39 @@
                     <button class="btn-primary" onclick="openNewTopicModal()"><i class="fa-solid fa-plus"></i> נושא חדש</button>
                 </div>
 
-                <div id="topics-container" class="topics-list">
-                    <div class="loader"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>טוען נושאים...</div>
+                <div class="add-category-row" id="add-category-row" style="display:none;">
+                    <button class="btn-secondary" onclick="openCategoryModal()"><i class="fa-solid fa-folder-plus"></i> הוספת קטגוריה</button>
                 </div>
+
+                <div id="categories-container" class="categories-list">
+                    <div class="loader"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>טוען קטגוריות...</div>
+                </div>
+            </div>
+
+            <!-- תצוגת נושאים בתוך קטגוריה -->
+            <div id="category-view" class="thread-view">
+                <button class="btn-secondary" onclick="showHome()" style="margin-bottom: 15px;">
+                    <i class="fa-solid fa-arrow-right"></i> חזרה לקטגוריות
+                </button>
+
+                <div class="welcome-card">
+                    <div class="category-header-block">
+                        <div class="category-icon-box" id="category-view-icon"></div>
+                        <div>
+                            <h2 id="category-view-title"></h2>
+                            <p id="category-view-desc" style="color: var(--text-muted); font-size: 14px;"></p>
+                        </div>
+                    </div>
+                    <button class="btn-primary" onclick="openNewTopicModal()"><i class="fa-solid fa-plus"></i> נושא חדש</button>
+                </div>
+
+                <div id="category-topics-container" class="topics-list"></div>
             </div>
 
             <!-- תצוגת נושא בודד (שרשור) -->
             <div id="thread-view" class="thread-view">
-                <button class="btn-secondary" onclick="showHome()" style="margin-bottom: 15px;">
-                    <i class="fa-solid fa-arrow-right"></i> חזרה לרשימת הנושאים
+                <button class="btn-secondary" onclick="backFromThread()" style="margin-bottom: 15px;">
+                    <i class="fa-solid fa-arrow-right"></i> <span id="thread-back-label">חזרה לרשימת הנושאים</span>
                 </button>
 
                 <div id="thread-header" class="thread-header"></div>
@@ -920,12 +1131,7 @@
                 <input type="text" id="new-topic-title" placeholder="הכנס כותרת קצרה וברורה">
 
                 <label>קטגוריה:</label>
-                <select id="new-topic-category">
-                    <option value="כללי">כללי</option>
-                    <option value="עזרה והדדיות">עזרה והדדיות</option>
-                    <option value="לוח מודעות">לוח מודעות</option>
-                    <option value="טכנולוגיה ומחשבים">טכנולוגיה ומחשבים</option>
-                </select>
+                <select id="new-topic-category"></select>
 
                 <label>תוכן ההודעה:</label>
                 <div class="editor-toolbar" id="new-topic-toolbar"></div>
@@ -934,6 +1140,35 @@
                 <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
                     <button class="btn-secondary" onclick="closeModal()">ביטול</button>
                     <button class="btn-primary" onclick="submitNewTopic()">פרסם נושא</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- מודאל ניהול קטגוריה (הוספה/עריכה - למנהל בלבד) -->
+    <div id="category-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="category-modal-title">הוספת קטגוריה</h3>
+                <span class="modal-close" onclick="closeCategoryModal()">&times;</span>
+            </div>
+            <div>
+                <label>שם הקטגוריה:</label>
+                <input type="text" id="category-name" placeholder="לדוגמה: מחשבים וטכנולוגיה">
+
+                <label>תיאור קצר:</label>
+                <input type="text" id="category-desc" placeholder="במה עוסקת הקטגוריה?">
+
+                <label>אייקון (מחלקת Font Awesome) וצבע:</label>
+                <div class="icon-picker-row">
+                    <div class="icon-preview-box" id="category-icon-preview"><i class="fa-solid fa-comments"></i></div>
+                    <input type="text" id="category-icon" placeholder="fa-solid fa-comments" oninput="updateCategoryIconPreview()" style="flex:1;">
+                    <input type="color" id="category-color" value="#0284c7" oninput="updateCategoryIconPreview()">
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                    <button class="btn-secondary" onclick="closeCategoryModal()">ביטול</button>
+                    <button class="btn-primary" onclick="saveCategory()">שמירת קטגוריה</button>
                 </div>
             </div>
         </div>
@@ -975,13 +1210,57 @@
         const API_URL = "https://sheetdb.io/api/v1/t9q5wwl0psz88";
         const ADMIN_EMAIL = "dh058328@gmail.com";
 
+        // הקטגוריות נשמרות בלשונית נפרדת בגיליון הגוגל בשם "categories".
+        // יש ליצור לשונית (Sheet) חדשה בגיליון הקיים עם השורה הראשונה (כותרות):
+        // id | name | description | icon | color | sort_order
+        const CATEGORIES_URL = API_URL + "?sheet=categories";
+
         let currentUser = null;
         let allPosts = [];
+        let allCategories = [];
         let currentTopicId = null;
+        let currentCategoryId = null; // הקטגוריה שמוצגת כרגע (category-view) או שממנה נפתח נושא
+        let editingCategoryId = null;
         let currentPanel = null;
         let replyingToQuote = null; // {id, author_name, snippet}
         let editingPostId = null;
         let confirmCallback = null;
+
+        /* ============ עזר: קטגוריות ============ */
+
+        function slugify(text) {
+            let hash = 5381;
+            for (let i = 0; i < text.length; i++) {
+                hash = ((hash << 5) + hash) + text.charCodeAt(i);
+                hash = hash & 0xffffffff;
+            }
+            return 'cat_' + Math.abs(hash).toString(36);
+        }
+
+        function getCategoryById(id) {
+            return allCategories.find(c => c.id === id) || null;
+        }
+
+        function categoryDisplayName(id) {
+            const cat = getCategoryById(id);
+            if (cat) return cat.name;
+            return id || 'כללי';
+        }
+
+        function categoryColor(id) {
+            const cat = getCategoryById(id);
+            return (cat && cat.color) ? cat.color : '#0284c7';
+        }
+
+        function categoryIconClass(id) {
+            const cat = getCategoryById(id);
+            return (cat && cat.icon) ? cat.icon : 'fa-solid fa-comments';
+        }
+
+        function topicsOfCategory(categoryId) {
+            const topicsMap = getTopicsMap();
+            return Object.keys(topicsMap).filter(tid => topicsMap[tid][0].category === categoryId);
+        }
 
         /* ============ עזר: משתמשים ============ */
 
@@ -1236,13 +1515,21 @@
 
         async function fetchPosts() {
             try {
-                const res = await fetch(API_URL);
-                allPosts = await res.json();
-                renderTopics();
+                const [postsRes, catsRes] = await Promise.all([
+                    fetch(API_URL),
+                    fetch(CATEGORIES_URL).catch(() => null)
+                ]);
+                allPosts = await postsRes.json();
+                allCategories = catsRes ? await catsRes.json().catch(() => []) : [];
+                if (!Array.isArray(allCategories)) allCategories = [];
+                allCategories.sort((a, b) => (num(a.sort_order) - num(b.sort_order)));
+
+                renderCategories();
+                if (currentCategoryId) renderTopicsInto('category-topics-container', currentCategoryId);
                 parseHash();
             } catch (err) {
                 console.error("שגיאה בטעינת נתונים:", err);
-                document.getElementById('topics-container').innerHTML = '<div class="loader">אירעה שגיאה בטעינת הפורום.</div>';
+                document.getElementById('categories-container').innerHTML = '<div class="loader">אירעה שגיאה בטעינת הפורום.</div>';
             }
         }
 
@@ -1262,16 +1549,82 @@
             return views + replies * 3;
         }
 
-        /* ============ תצוגת רשימת נושאים ============ */
+        /* ============ תצוגת קטגוריות (עמוד הבית) ============ */
 
-        function renderTopics() {
-            const container = document.getElementById('topics-container');
+        function renderCategories() {
+            document.getElementById('add-category-row').style.display = (currentUser && currentUser.isAdmin) ? 'flex' : 'none';
+
+            const container = document.getElementById('categories-container');
+            container.innerHTML = '';
+
+            if (allCategories.length === 0) {
+                container.innerHTML = (currentUser && currentUser.isAdmin)
+                    ? '<div class="loader">אין עדיין קטגוריות. לחצו על "הוספת קטגוריה" כדי ליצור את הקטגוריה הראשונה.</div>'
+                    : '<div class="loader">טרם נוספו קטגוריות לפורום.</div>';
+                return;
+            }
+
+            const topicsMap = getTopicsMap();
+
+            allCategories.forEach(cat => {
+                const topicIds = Object.keys(topicsMap).filter(tid => topicsMap[tid][0].category === cat.id);
+                let postCount = 0;
+                let lastPost = null, lastMainPost = null;
+                topicIds.forEach(tid => {
+                    const posts = topicsMap[tid];
+                    postCount += posts.length;
+                    const candidate = posts[posts.length - 1];
+                    if (!lastPost || (candidate.id > lastPost.id)) {
+                        lastPost = candidate;
+                        lastMainPost = posts[0];
+                    }
+                });
+
+                const card = document.createElement('div');
+                card.className = 'category-card';
+                card.onclick = () => { location.hash = '#category/' + cat.id; };
+
+                const adminActions = (currentUser && currentUser.isAdmin) ? `
+                    <div class="category-admin-actions">
+                        <button class="btn-secondary" onclick="event.stopPropagation(); openCategoryModal('${cat.id}')"><i class="fa-solid fa-pen"></i> עריכה</button>
+                        <button class="btn-danger" onclick="event.stopPropagation(); deleteCategory('${cat.id}')"><i class="fa-solid fa-trash"></i> מחיקה</button>
+                    </div>` : '';
+
+                const lastPostHtml = lastPost ? `
+                    <img src="${lastPost.author_avatar || 'https://via.placeholder.com/36'}" alt="">
+                    <div class="category-lastpost-text">
+                        <div class="category-lastpost-title">${escapeHtml(lastMainPost.title || 'ללא כותרת')}</div>
+                        <div class="category-lastpost-meta">${escapeHtml(lastPost.author_name)} · ${escapeHtml(lastPost.created_at || '')}</div>
+                    </div>
+                ` : `<div class="category-lastpost-empty">אין עדיין הודעות</div>`;
+
+                card.innerHTML = `
+                    <div class="category-icon-box" style="background:${escapeHtml(cat.color || '#0284c7')};"><i class="${escapeHtml(cat.icon || 'fa-solid fa-comments')}"></i></div>
+                    <div class="category-info">
+                        <h3>${escapeHtml(cat.name)}</h3>
+                        <p>${escapeHtml(cat.description || '')}</p>
+                        ${adminActions}
+                    </div>
+                    <div class="category-stats">
+                        <div><div class="stat-num">${num(postCount)}</div><div class="stat-label">פוסטים</div></div>
+                        <div><div class="stat-num">${topicIds.length}</div><div class="stat-label">נושאים</div></div>
+                    </div>
+                    <div class="category-lastpost">${lastPostHtml}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        /* ============ תצוגת רשימת נושאים (בתוך קטגוריה) ============ */
+
+        function renderTopicsInto(containerId, categoryId) {
+            const container = document.getElementById(containerId);
             container.innerHTML = '';
             const topicsMap = getTopicsMap();
-            const topicIds = Object.keys(topicsMap);
+            const topicIds = Object.keys(topicsMap).filter(tid => topicsMap[tid][0].category === categoryId);
 
             if (topicIds.length === 0) {
-                container.innerHTML = '<div class="loader">אין עדיין נושאים בפורום. כולם מוזמנים לפתוח נושא חדש!</div>';
+                container.innerHTML = '<div class="loader">אין עדיין נושאים בקטגוריה הזו. כולם מוזמנים לפתוח נושא חדש!</div>';
                 return;
             }
 
@@ -1291,7 +1644,7 @@
                         <div class="topic-details">
                             <h3>${escapeHtml(mainPost.title || 'ללא כותרת')}</h3>
                             <div class="topic-meta">
-                                <span class="badge-category">${escapeHtml(mainPost.category || 'כללי')}</span>
+                                <span class="badge-category" style="background:${categoryColor(mainPost.category)}22; color:${categoryColor(mainPost.category)};">${escapeHtml(categoryDisplayName(mainPost.category))}</span>
                                 <span>נפתח על ידי <strong>${escapeHtml(mainPost.author_name)}</strong></span>
                                 <span>תגובה אחרונה: ${escapeHtml(lastPost.created_at || '')}</span>
                             </div>
@@ -1306,15 +1659,54 @@
             });
         }
 
+        function showCategory(categoryId, fromHash) {
+            const cat = getCategoryById(categoryId);
+            if (!cat) {
+                showToast('הקטגוריה לא נמצאה', 'error');
+                showHome();
+                return;
+            }
+            currentCategoryId = categoryId;
+
+            document.getElementById('home-view').style.display = 'none';
+            document.getElementById('category-view').style.display = 'block';
+            document.getElementById('thread-view').style.display = 'none';
+            document.getElementById('profile-view').style.display = 'none';
+            setActiveNav(null);
+            closeSidebarPanel();
+
+            if (!fromHash) location.hash = '#category/' + categoryId;
+
+            document.getElementById('category-view-title').innerText = cat.name;
+            document.getElementById('category-view-desc').innerText = cat.description || '';
+            const iconBox = document.getElementById('category-view-icon');
+            iconBox.style.background = cat.color || '#0284c7';
+            iconBox.innerHTML = `<i class="${escapeHtml(cat.icon || 'fa-solid fa-comments')}"></i>`;
+
+            renderTopicsInto('category-topics-container', categoryId);
+        }
+
         /* ============ תצוגת נושא בודד ============ */
 
         function showHome() {
             document.getElementById('home-view').style.display = 'block';
+            document.getElementById('category-view').style.display = 'none';
             document.getElementById('thread-view').style.display = 'none';
             document.getElementById('profile-view').style.display = 'none';
             currentTopicId = null;
+            currentCategoryId = null;
             setActiveNav('nav-home');
             if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+        }
+
+        function backFromThread() {
+            const posts = allPosts.filter(p => p.topic_id === currentTopicId);
+            const mainPost = posts[0];
+            if (mainPost && getCategoryById(mainPost.category)) {
+                location.hash = '#category/' + mainPost.category;
+            } else {
+                showHome();
+            }
         }
 
         function setActiveNav(id) {
