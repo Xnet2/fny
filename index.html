@@ -978,11 +978,16 @@
         .post-card {
             background: #ffffff;
             border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 15px;
+            border-radius: 14px;
+            padding: 0;
+            margin-bottom: 16px;
             box-shadow: var(--shadow);
             scroll-margin-top: 90px;
+            overflow: hidden;
+        }
+
+        .post-card.post-op {
+            border-color: #bae6fd;
         }
 
         .post-card.highlight {
@@ -994,47 +999,76 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
-            border-bottom: 1px solid #f1f5f9;
-            padding-bottom: 10px;
+            padding: 14px 22px;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .post-card.post-op .post-header {
+            background: linear-gradient(90deg, var(--primary-light), #f8fafc 75%);
         }
 
         .post-user {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         .post-author-name {
             cursor: pointer;
+            font-size: 14.5px;
         }
         .post-author-name:hover {
             color: var(--primary);
         }
 
-        .post-quote {
-            background: #f8fafc;
-            border-right: 3px solid var(--primary);
-            border-radius: 6px;
-            padding: 10px 12px;
-            margin-bottom: 12px;
-            font-size: 13px;
+        .post-op-badge {
+            background: var(--primary-light);
+            color: var(--primary-hover);
+            padding: 2px 9px;
+            border-radius: 12px;
+            font-size: 10.5px;
+            font-weight: 600;
+        }
+
+        .post-index {
+            font-size: 11.5px;
             color: var(--text-muted);
+            background: #fff;
+            border: 1px solid var(--border-color);
+            padding: 3px 11px;
+            border-radius: 20px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .post-body {
+            padding: 20px 22px;
+        }
+
+        .post-quote {
+            background: var(--primary-light);
+            border-right: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            color: #0369a1;
         }
 
         .post-quote strong {
-            color: var(--primary);
+            color: var(--primary-hover);
             cursor: pointer;
         }
 
         .post-quote-text {
             margin-top: 4px;
-            color: #475569;
+            color: #334155;
         }
 
         .post-content {
-            font-size: 15px;
-            line-height: 1.6;
+            font-size: 15.5px;
+            line-height: 1.75;
             color: #334155;
         }
 
@@ -1060,19 +1094,20 @@
         .post-footer {
             display: flex;
             align-items: center;
-            gap: 6px;
-            margin-top: 15px;
-            padding-top: 12px;
-            border-top: 1px solid #f1f5f9;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 12px 22px;
+            background: #fafbfc;
+            border-top: 1px solid var(--border-color);
         }
 
         .vote-btn {
             display: flex;
             align-items: center;
             gap: 5px;
-            background: none;
+            background: #ffffff;
             border: 1px solid var(--border-color);
-            padding: 5px 10px;
+            padding: 6px 12px;
             border-radius: 20px;
             cursor: pointer;
             font-size: 12.5px;
@@ -1545,7 +1580,7 @@
     <div id="topic-modal" class="modal-overlay">
         <div class="modal">
             <div class="modal-header">
-                <h3>יצירת נושא חדש</h3>
+                <h3 id="topic-modal-title">יצירת נושא חדש</h3>
                 <span class="modal-close" onclick="closeModal()">&times;</span>
             </div>
             <div>
@@ -1564,7 +1599,7 @@
 
                 <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
                     <button class="btn-secondary" onclick="closeModal()">ביטול</button>
-                    <button class="btn-primary" onclick="submitNewTopic()">פרסם נושא</button>
+                    <button class="btn-primary" id="topic-modal-submit-btn" onclick="submitNewTopic()">פרסם נושא</button>
                 </div>
             </div>
         </div>
@@ -1636,6 +1671,7 @@
         const ADMIN_EMAIL = "dh058328@gmail.com";
         const CATEGORY_PREFIX = 'cat_';
         const DEFAULT_ICON = 'fa-comments';
+        const CACHE_KEY = 'forum_data_cache_v1';
 
         // הגדרות Cloudinary להעלאת תמונות (unsigned upload preset)
         const CLOUDINARY_CLOUD_NAME = 'dpsgd6esr';
@@ -1750,6 +1786,7 @@
         let currentPanel = null;
         let replyingToQuote = null; // {id, author_name, snippet}
         let editingPostId = null;
+        let editingTopicMainId = null;
         let confirmCallback = null;
 
         /* ============ עזר: משתמשים ============ */
@@ -2174,7 +2211,24 @@
 
         /* ============ טעינת נתונים ============ */
 
+        // מציגים מייד נתונים שמורים מהפעם הקודמת (אם יש), כדי שהקטגוריות והתוכן
+        // יופיעו על המסך באופן מיידי, ורק אז פונים לשרת לרענן ברקע - כך שאין המתנה
+        // מרגישה לטעינה מלאה בכל פתיחה של האתר
         async function fetchPosts() {
+            let usedCache = false;
+            try {
+                const cached = localStorage.getItem(CACHE_KEY);
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        allPosts = parsed;
+                        usedCache = true;
+                        renderCategoriesGrid();
+                        parseHash();
+                    }
+                }
+            } catch (e) {}
+
             try {
                 const res = await fetch(API_URL);
                 const json = await res.json();
@@ -2188,11 +2242,19 @@
                     if (Array.isArray(json2)) allPosts = json2;
                 }
 
-                renderCategoriesGrid();
-                parseHash();
+                try { localStorage.setItem(CACHE_KEY, JSON.stringify(allPosts)); } catch (e) {}
+
+                if (usedCache) {
+                    refreshCurrentViewInPlace();
+                } else {
+                    renderCategoriesGrid();
+                    parseHash();
+                }
             } catch (err) {
                 console.error("שגיאה בטעינת נתונים:", err);
-                document.getElementById('categories-container').innerHTML = '<div class="loader">אירעה שגיאה בטעינת הפורום.</div>';
+                if (!usedCache) {
+                    document.getElementById('categories-container').innerHTML = '<div class="loader">אירעה שגיאה בטעינת הפורום.</div>';
+                }
             }
         }
 
@@ -2693,11 +2755,21 @@
                 </button>
             ` : '';
 
+            const canManageTopic = currentUser && (currentUser.isAdmin || currentUser.email === mainPost.author_email);
+            const ownerControls = canManageTopic ? `
+                <button class="icon-btn" title="עריכת הנושא" onclick="openEditTopicModal('${topicId}')">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="icon-btn" title="מחיקת הנושא" onclick="deleteTopic('${topicId}')" style="color:#dc2626;">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            ` : '';
+
             document.getElementById('thread-header').innerHTML = `
                 <div class="thread-header-top">
                     <div>
                         <div class="topic-meta" style="margin-bottom: 8px;">
-                            <span class="badge-category">${escapeHtml(mainPost.category || 'כללי')}</span>
+                            <span class="badge-category">${escapeHtml(getCategoryName(mainPost.category))}</span>
                             ${tagChipsHtml(mainPost.tags)}
                             ${isPinned(mainPost) ? '<span class="badge-pinned"><i class="fa-solid fa-thumbtack"></i> מוצמד</span>' : ''}
                             <span><i class="fa-regular fa-eye"></i> ${num(mainPost.views)} צפיות</span>
@@ -2706,6 +2778,7 @@
                     </div>
                     <div>
                         ${adminControls}
+                        ${ownerControls}
                         <button class="icon-btn" title="העתק קישור לנושא" onclick="copyLink('topic', '${topicId}')"><i class="fa-solid fa-link"></i></button>
                     </div>
                 </div>
@@ -2734,9 +2807,10 @@
                 const canManage = currentUser && (currentUser.isAdmin || currentUser.email === post.author_email);
                 const uid = userIdFromEmail(post.author_email);
                 const vote = getVoteState(post.id);
+                const isOp = index === 0;
 
                 const postDiv = document.createElement('div');
-                postDiv.className = 'post-card';
+                postDiv.className = 'post-card' + (isOp ? ' post-op' : '');
                 postDiv.id = 'post-card-' + post.id;
 
                 const quoteHtml = post.quote_content ? `
@@ -2749,17 +2823,20 @@
                 postDiv.innerHTML = `
                     <div class="post-header">
                         <div class="post-user">
-                            ${avatarHtml(post.author_name, post.author_email, post.author_avatar, 36, `style="cursor:pointer;" onclick="location.hash='#user/${uid}'"`)}
+                            ${avatarHtml(post.author_name, post.author_email, post.author_avatar, 38, `style="cursor:pointer;" onclick="location.hash='#user/${uid}'"`)}
                             <div>
-                                <strong class="post-author-name" style="font-size: 14px;" onclick="location.hash='#user/${uid}'">${escapeHtml(post.author_name)}</strong>
+                                <strong class="post-author-name" onclick="location.hash='#user/${uid}'">${escapeHtml(post.author_name)}</strong>
                                 ${post.author_email === ADMIN_EMAIL ? '<span class="badge-admin">מנהל</span>' : ''}
-                                <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(post.created_at || '')}</div>
+                                ${isOp ? '<span class="post-op-badge">פתח/ה את הנושא</span>' : ''}
+                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${escapeHtml(post.created_at || '')}</div>
                             </div>
                         </div>
-                        <span style="font-size: 12px; color: var(--text-muted);">#${index + 1}</span>
+                        <span class="post-index">#${index + 1}</span>
                     </div>
-                    ${quoteHtml}
-                    <div class="post-content">${renderContent(post.content)}</div>
+                    <div class="post-body">
+                        ${quoteHtml}
+                        <div class="post-content">${renderContent(post.content)}</div>
+                    </div>
                     <div class="post-footer">
                         <button class="vote-btn ${vote === 'dislike' ? 'voted-dislike' : ''}" onclick="votePost('${post.id}','dislike')" title="לא אהבתי">
                             <i class="fa-regular fa-thumbs-down"></i> <span id="dislike-count-${post.id}">${num(post.dislikes)}</span>
@@ -2909,12 +2986,37 @@
                 showToast('יש להתחבר עם חשבון גוגל כדי לפתוח נושא חדש', 'error');
                 return;
             }
+            editingTopicMainId = null;
+            document.getElementById('topic-modal-title').innerText = 'יצירת נושא חדש';
+            document.getElementById('topic-modal-submit-btn').innerText = 'פרסם נושא';
+            document.getElementById('new-topic-title').value = '';
+            document.getElementById('new-topic-tags').value = '';
+            document.getElementById('new-topic-content').value = '';
             populateCategorySelect(preselectCategoryId || currentCategoryId);
+            document.getElementById('topic-modal').style.display = 'flex';
+        }
+
+        function openEditTopicModal(topicId) {
+            const mainPost = allPosts.find(p => p.topic_id === topicId && p.title);
+            if (!mainPost) return;
+            const canManage = currentUser && (currentUser.isAdmin || currentUser.email === mainPost.author_email);
+            if (!canManage) {
+                showToast('אין לך הרשאה לערוך נושא זה', 'error');
+                return;
+            }
+            editingTopicMainId = mainPost.id;
+            document.getElementById('topic-modal-title').innerText = 'עריכת נושא';
+            document.getElementById('topic-modal-submit-btn').innerText = 'שמור שינויים';
+            document.getElementById('new-topic-title').value = mainPost.title || '';
+            document.getElementById('new-topic-tags').value = mainPost.tags || '';
+            document.getElementById('new-topic-content').value = mainPost.content || '';
+            populateCategorySelect(mainPost.category);
             document.getElementById('topic-modal').style.display = 'flex';
         }
 
         function closeModal() {
             document.getElementById('topic-modal').style.display = 'none';
+            editingTopicMainId = null;
         }
 
         async function submitNewTopic() {
@@ -2925,6 +3027,21 @@
 
             if (!title || !content) {
                 showToast('אנא מלאו את כל השדות', 'error');
+                return;
+            }
+
+            if (editingTopicMainId) {
+                const idToSave = editingTopicMainId;
+                closeModal();
+                try {
+                    const ok = await sheetdbPatch('id', idToSave, { title, category, tags, content });
+                    if (!ok) throw new Error('העדכון נכשל בשרת');
+                    await fetchPosts();
+                    if (currentTopicId) openThread(currentTopicId, true);
+                    showToast('הנושא עודכן בהצלחה', 'success');
+                } catch (err) {
+                    showToast('שגיאה בעדכון הנושא', 'error');
+                }
                 return;
             }
 
@@ -2963,6 +3080,33 @@
             } catch (err) {
                 showToast('שגיאה בשמירת הנושא', 'error');
             }
+        }
+
+        function deleteTopic(topicId) {
+            const mainPost = allPosts.find(p => p.topic_id === topicId && p.title);
+            if (!mainPost) return;
+            const canManage = currentUser && (currentUser.isAdmin || currentUser.email === mainPost.author_email);
+            if (!canManage) {
+                showToast('אין לך הרשאה למחוק נושא זה', 'error');
+                return;
+            }
+            const categoryOfTopic = mainPost.category;
+            showConfirm('האם למחוק את הנושא כולו לצמיתות? כל התגובות שבו יימחקו גם הן ולא ניתן יהיה לשחזר.', async () => {
+                try {
+                    const ok = await sheetdbDelete('topic_id', topicId);
+                    if (!ok) throw new Error('המחיקה נכשלה בשרת');
+
+                    await fetchPosts();
+                    showToast('הנושא נמחק', 'success');
+                    if (categoryOfTopic && getCategoryById(categoryOfTopic)) {
+                        openCategory(categoryOfTopic, false);
+                    } else {
+                        showHome();
+                    }
+                } catch (err) {
+                    showToast('שגיאה במחיקת הנושא', 'error');
+                }
+            });
         }
 
         async function submitReply() {
@@ -3437,25 +3581,9 @@
             }
         });
 
-        // מרענן נתונים מהשרת ומעדכן רק את התוכן של התצוגה הפעילה כרגע,
-        // בלי לנווט בין מסכים, בלי לאבד קלט בטפסים, ובלי לשנות את מיקום הגלילה
-        async function silentRefresh() {
-            if (refreshInFlight) return;
-            if (isAnyModalOpen()) return; // לא לרענן באמצע עריכה/יצירה כדי לא לאבד קלט
-
-            refreshInFlight = true;
-            try {
-                const res = await fetch(API_URL);
-                if (!res.ok) return;
-                const json = await res.json();
-                if (!Array.isArray(json)) return; // תשובה לא תקינה - משאירים את הנתונים הקודמים
-                allPosts = json;
-            } catch (e) {
-                return;
-            } finally {
-                refreshInFlight = false;
-            }
-
+        // מעדכן את התוכן של התצוגה הפעילה כרגע בהתאם ל-allPosts הנוכחי,
+        // בלי לנווט בין מסכים ובלי לשנות את מיקום הגלילה
+        function refreshCurrentViewInPlace() {
             const scrollY = window.scrollY;
 
             if (document.getElementById('home-view').style.display !== 'none') {
@@ -3484,6 +3612,29 @@
             }
 
             window.scrollTo(0, scrollY);
+        }
+
+        // מרענן נתונים מהשרת ומעדכן רק את התוכן של התצוגה הפעילה כרגע,
+        // בלי לנווט בין מסכים, בלי לאבד קלט בטפסים, ובלי לשנות את מיקום הגלילה
+        async function silentRefresh() {
+            if (refreshInFlight) return;
+            if (isAnyModalOpen()) return; // לא לרענן באמצע עריכה/יצירה כדי לא לאבד קלט
+
+            refreshInFlight = true;
+            try {
+                const res = await fetch(API_URL);
+                if (!res.ok) return;
+                const json = await res.json();
+                if (!Array.isArray(json)) return; // תשובה לא תקינה - משאירים את הנתונים הקודמים
+                allPosts = json;
+                try { localStorage.setItem(CACHE_KEY, JSON.stringify(allPosts)); } catch (e) {}
+            } catch (e) {
+                return;
+            } finally {
+                refreshInFlight = false;
+            }
+
+            refreshCurrentViewInPlace();
         }
 
         /* ============ אתחול העמוד ============ */
