@@ -1034,15 +1034,39 @@
             border-color: var(--primary);
         }
 
-        .post-card {
-            background: #ffffff;
+        .posts-list {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 0;
-            margin-bottom: 16px;
             box-shadow: var(--shadow);
+        }
+
+        .posts-list .post-card:first-child {
+            border-top-right-radius: 12px;
+            border-top-left-radius: 12px;
+        }
+
+        .posts-list .post-card:last-child {
+            border-bottom-right-radius: 12px;
+            border-bottom-left-radius: 12px;
+        }
+
+        .post-card {
+            background: #ffffff;
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 0;
+            padding: 0;
+            margin-bottom: 0;
+            box-shadow: none;
             scroll-margin-top: 90px;
-            overflow: hidden;
+            overflow: visible;
+        }
+
+        .post-card:last-child {
+            border-bottom: none;
         }
 
         .post-card.post-op {
@@ -1050,8 +1074,7 @@
         }
 
         .post-card.highlight {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-light);
+            background: var(--primary-light);
         }
 
         .post-header {
@@ -1195,13 +1218,15 @@
         }
 
         .post-menu {
-            position: fixed;
+            position: absolute;
+            left: 0;
+            top: 38px;
             background: #fff;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             box-shadow: 0 6px 18px rgba(0,0,0,0.1);
             min-width: 140px;
-            z-index: 500;
+            z-index: 50;
             overflow: hidden;
             display: none;
         }
@@ -1861,7 +1886,7 @@
                 </button>
 
                 <div id="thread-header" class="thread-header"></div>
-                <div id="posts-container"></div>
+                <div id="posts-container" class="posts-list"></div>
 
                 <!-- תיבת תגובה -->
                 <div class="reply-box" id="reply-box">
@@ -2238,25 +2263,7 @@
         let userFollows = { topics: new Set(), users: new Set() };
         let notifications = [];
         let notifPollTimer = null;
-        // מזהי התראות שסומנו כנקראו מקומית, כדי שפולינג/רענון לא ידרוס אותן חזרה ל"לא נקרא".
-        // נשמר גם ב-localStorage כדי שהמצב ישרוד רענון מלא של הדף (F5), לא רק polling בתוך אותה טעינה.
-        const READ_NOTIF_STORAGE_KEY = 'read_notif_ids';
-        function loadLocallyReadNotifIds() {
-            try {
-                const raw = JSON.parse(localStorage.getItem(READ_NOTIF_STORAGE_KEY) || '[]');
-                return new Set(Array.isArray(raw) ? raw.map(String) : []);
-            } catch (e) {
-                return new Set();
-            }
-        }
-        function persistLocallyReadNotifIds() {
-            try {
-                // מגבילים לגודל סביר כדי שהאחסון לא יגדל ללא גבול לאורך זמן
-                const ids = Array.from(locallyReadNotifIds).slice(-500);
-                localStorage.setItem(READ_NOTIF_STORAGE_KEY, JSON.stringify(ids));
-            } catch (e) {}
-        }
-        let locallyReadNotifIds = loadLocallyReadNotifIds();
+        let locallyReadNotifIds = new Set(); // מזהי התראות שסומנו כנקראו מקומית, כדי שפולינג לא ידרוס אותן חזרה ל"לא נקרא"
         let pendingGoogleProfile = null; // פרופיל גוגל שממתין להשלמת הרשמה
 
         /* ============ עזר: משתמשים ============ */
@@ -3000,7 +3007,6 @@
 
         async function markNotificationRead_(id) {
             locallyReadNotifIds.add(String(id));
-            persistLocallyReadNotifIds();
             try {
                 await fetch(USERS_API_URL, {
                     method: 'POST',
@@ -3013,7 +3019,6 @@
         async function markAllNotificationsRead() {
             if (!currentUser || notifications.length === 0) return;
             notifications.forEach(n => { n.is_read = 'TRUE'; locallyReadNotifIds.add(String(n.id)); });
-            persistLocallyReadNotifIds();
             renderNotifBell();
             renderNotifDropdown();
             try {
@@ -3759,29 +3764,12 @@
         }
 
         function togglePostMenu(postId) {
+            document.querySelectorAll('.post-menu.open').forEach(m => {
+                if (m.id !== 'post-menu-' + postId) m.classList.remove('open');
+            });
             const menu = document.getElementById('post-menu-' + postId);
-            const wasOpen = menu.classList.contains('open');
-
-            document.querySelectorAll('.post-menu.open').forEach(m => m.classList.remove('open'));
-
-            if (wasOpen) return; // היה פתוח - הלחיצה סוגרת אותו
-
-            const btn = menu.previousElementSibling; // כפתור שלוש הנקודות
-            const rect = btn.getBoundingClientRect();
-            const menuWidth = 150; // תואם ל-min-width שבסגנון .post-menu
-            let left = rect.left;
-            if (left + menuWidth > window.innerWidth - 8) left = window.innerWidth - menuWidth - 8;
-            if (left < 8) left = 8;
-            menu.style.left = left + 'px';
-            menu.style.top = (rect.bottom + 6) + 'px';
-
-            menu.classList.add('open');
+            menu.classList.toggle('open');
         }
-
-        // סוגר תפריטי "עוד אפשרויות" פתוחים כשגוללים את הדף, כדי שהתפריט (הממוקם fixed) לא "ייתלש" מהכפתור
-        window.addEventListener('scroll', () => {
-            document.querySelectorAll('.post-menu.open').forEach(m => m.classList.remove('open'));
-        }, true);
 
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.post-menu-wrap')) {
