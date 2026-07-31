@@ -2469,11 +2469,17 @@
                 // אם למשתמש הזה כבר יש היסטוריה בפורום - זוכרים את השם/תמונה שנשמרו לו
                 // (כולל אם מנהל שינה אותם), במקום להחליף אותם תמיד בנתונים הטריים מגוגל
                 const existing = findUserProfileByEmail(data.email);
+                let cachedLocal = null;
+                try { cachedLocal = JSON.parse(localStorage.getItem('forum_user') || 'null'); } catch (e) {}
+                const sameUserCached = cachedLocal && cachedLocal.email === data.email ? cachedLocal : null;
                 currentUser = {
                     name: existing ? (existing.name || data.name) : data.name,
                     email: data.email,
                     picture: existing ? (existing.avatar || '') : data.picture,
-                    isAdmin: data.email === ADMIN_EMAIL
+                    isAdmin: data.email === ADMIN_EMAIL,
+                    // שומרים על מצב "רשום" שכבר ידוע מהפעם הקודמת, כדי לא לבקש שוב כתובת/אישור
+                    registered: sameUserCached ? !!sameUserCached.registered : false,
+                    address: sameUserCached ? sameUserCached.address : undefined
                 };
                 localStorage.setItem('forum_user', JSON.stringify(currentUser));
                 updateUserUI();
@@ -2513,25 +2519,53 @@
 
         /* ============ הרשמה מחייבת (כתובת + התחייבות נווה יעקב) ============ */
 
+        // בדיקה גמישה של דגל "מאושר" שחוזר מהשרת - לפעמים חוזר כ-boolean true
+        // ולפעמים כמחרוזת 'TRUE'/'true', וזה גרם לבקשת ההרשמה לחזור על עצמה
+        function isConfirmedFlag(v) {
+            if (v === true) return true;
+            if (typeof v === 'string') return v.trim().toUpperCase() === 'TRUE';
+            return false;
+        }
+
         async function checkAndShowRegistration() {
             if (!currentUser) return;
+
+            // אם כבר ידוע (מפעם קודמת שנשמרה מקומית) שהמשתמש רשום ואישר -
+            // לא מחכים לשרת כדי להציג את הפעמון/התראות, מציגים מיד ומוודאים ברקע.
+            // זה גם פותר את העיכוב בטעינת הפעמון וגם מונע הבהוב של חלון ההרשמה.
+            const knownRegistered = !!(currentUser.registered && currentUser.address);
+            if (knownRegistered) {
+                document.getElementById('registration-modal').style.display = 'none';
+                Promise.all([loadUserFollows(), loadNotifications()]).then(startNotifPolling);
+            }
+
             try {
                 const res = await fetch(`${USERS_API_URL}?action=getUser&email=${encodeURIComponent(currentUser.email)}`);
                 const user = await res.json();
-                if (!user || !user.address || String(user.confirmed_neve_yaakov) !== 'TRUE') {
-                    document.getElementById('reg-address').value = (user && user.address) || '';
-                    document.getElementById('reg-confirm').checked = false;
-                    document.getElementById('registration-modal').style.display = 'flex';
+                const confirmed = user && user.address && isConfirmedFlag(user.confirmed_neve_yaakov);
+                if (!confirmed) {
+                    // אם ידענו שהוא רשום מקומית אבל השרת לא מאשר - לא מציקים לו שוב על הסמך
+                    // תשובת שרת חד-פעמית; רק אם גם מקומית וגם בשרת אין רישום מבקשים הרשמה.
+                    if (!knownRegistered) {
+                        document.getElementById('reg-address').value = (user && user.address) || '';
+                        document.getElementById('reg-confirm').checked = false;
+                        document.getElementById('registration-modal').style.display = 'flex';
+                    }
                     return;
                 }
                 document.getElementById('registration-modal').style.display = 'none';
                 currentUser.address = user.address;
                 currentUser.registered = true;
-                await Promise.all([loadUserFollows(), loadNotifications()]);
-                startNotifPolling();
+                localStorage.setItem('forum_user', JSON.stringify(currentUser));
+                if (!knownRegistered) {
+                    await Promise.all([loadUserFollows(), loadNotifications()]);
+                    startNotifPolling();
+                }
             } catch (e) {
                 // אם השרת לא זמין - לא חוסמים את המשתמש מהפורום
-                document.getElementById('registration-modal').style.display = 'none';
+                if (!knownRegistered) {
+                    document.getElementById('registration-modal').style.display = 'none';
+                }
             }
         }
 
@@ -2564,6 +2598,7 @@
                 });
                 currentUser.address = address;
                 currentUser.registered = true;
+                localStorage.setItem('forum_user', JSON.stringify(currentUser));
                 document.getElementById('registration-modal').style.display = 'none';
                 showToast('ההרשמה הושלמה בהצלחה', 'success');
                 await Promise.all([loadUserFollows(), loadNotifications()]);
