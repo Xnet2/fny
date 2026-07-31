@@ -1375,6 +1375,178 @@
         @media (max-width: 700px) {
             .sidebar-panel { width: calc(100% - 70px); }
         }
+
+        /* פעמון התראות */
+        .notif-bell-container {
+            position: relative;
+        }
+
+        .notif-bell-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            color: var(--text-muted);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            position: relative;
+            transition: all 0.15s;
+        }
+
+        .notif-bell-btn:hover {
+            background: #f1f5f9;
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .notif-badge {
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            background: var(--admin-badge);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            min-width: 17px;
+            height: 17px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            border: 2px solid #fff;
+        }
+
+        .notif-dropdown {
+            position: absolute;
+            top: 50px;
+            left: 0;
+            width: 340px;
+            max-height: 420px;
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 500;
+        }
+
+        .notif-dropdown.open {
+            display: flex;
+        }
+
+        .notif-dropdown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .notif-mark-all {
+            font-weight: 400;
+            font-size: 12px;
+            color: var(--primary);
+            cursor: pointer;
+        }
+
+        .notif-list {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .notif-item {
+            display: flex;
+            gap: 10px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.15s;
+            align-items: flex-start;
+        }
+
+        .notif-item:last-child {
+            border-bottom: none;
+        }
+
+        .notif-item:hover {
+            background: #f8fafc;
+        }
+
+        .notif-item.unread {
+            background: var(--primary-light);
+        }
+
+        .notif-item.unread:hover {
+            background: #d3ecfa;
+        }
+
+        .notif-item-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary);
+            margin-top: 6px;
+            flex-shrink: 0;
+        }
+
+        .notif-item-text {
+            font-size: 13px;
+            color: var(--text-main);
+            line-height: 1.4;
+        }
+
+        .notif-item-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        .notif-empty {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+            padding: 30px 10px;
+        }
+
+        /* כפתור עקוב */
+        .follow-btn {
+            border: 1px solid var(--border-color);
+            background: #fff;
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12.5px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+        }
+
+        .follow-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .follow-btn.following {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        #registration-modal .modal p {
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
@@ -1417,6 +1589,19 @@
                 </div>
                 <div id="google-btn-container">
                     <div class="g_id_signin" data-type="standard"></div>
+                </div>
+                <div id="notif-bell-container" class="notif-bell-container" style="display:none;">
+                    <button class="notif-bell-btn" onclick="toggleNotifPanel(); return false;" title="התראות">
+                        <i class="fa-solid fa-bell"></i>
+                        <span id="notif-badge" class="notif-badge" style="display:none;">0</span>
+                    </button>
+                    <div id="notif-dropdown" class="notif-dropdown">
+                        <div class="notif-dropdown-header">
+                            <span>התראות</span>
+                            <span class="notif-mark-all" onclick="markAllNotificationsRead()">סמן הכל כנקרא</span>
+                        </div>
+                        <div id="notif-list" class="notif-list"></div>
+                    </div>
                 </div>
                 <div id="user-info" class="user-profile" style="display: none;">
                     <span id="user-avatar" class="user-avatar" style="display:inline-flex; cursor:pointer;" onclick="goToMyProfile()"></span>
@@ -1580,6 +1765,31 @@
     </div>
 
     <!-- מודאל יצירת נושא חדש -->
+    <!-- מודאל השלמת הרשמה (חובה, ללא אפשרות סגירה) -->
+    <div id="registration-modal" class="modal-overlay">
+        <div class="modal" style="max-width: 420px;">
+            <div class="modal-header">
+                <h3>השלמת הרשמה לפורום</h3>
+            </div>
+            <div>
+                <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 16px;">
+                    כדי להשתתף בפורום נווה יעקב, יש להזין את כתובת המגורים שלך ולאשר שאת/ה מתגורר/ת בשכונה.
+                </p>
+                <label>כתובת מגורים:</label>
+                <input type="text" id="reg-address" placeholder="לדוגמה: רחוב הדגן 12, נווה יעקב">
+
+                <label style="display:flex; align-items:center; gap:8px; margin-top:16px; cursor:pointer;">
+                    <input type="checkbox" id="reg-confirm" style="width:16px; height:16px; margin:0;">
+                    <span style="font-size: 13.5px;">אני מצהיר/ה ומתחייב/ת שאני מתגורר/ת בשכונת נווה יעקב</span>
+                </label>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button class="btn-primary" onclick="submitRegistration()">המשך לפורום</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="topic-modal" class="modal-overlay">
         <div class="modal">
             <div class="modal-header">
@@ -1698,6 +1908,7 @@
     <script>
         // הדביקו כאן את קישור ה-Web App שקיבלתם אחרי פריסת ה-Apps Script (מסתיים ב-/exec)
         const API_URL = "https://script.google.com/macros/s/AKfycbx6TbORKoj_XXmOnbigtFQGc8Dmt94acTbOdb5pnEZ9YfYVlQJ2CeFrfFqb8GzGXEaD/exec";
+        const USERS_API_URL = "https://script.google.com/macros/s/AKfycby3d8oHPH-A3nZLfFlAnkegoYmBGPOtzoMEDrwgtYAacK7VjwLLHa_TZDaVjnsdb2k_iA/exec";
         const ADMIN_EMAIL = "dh058328@gmail.com";
         const CATEGORY_PREFIX = 'cat_';
         const DEFAULT_ICON = 'fa-comments';
@@ -1819,6 +2030,10 @@
         let editingTopicMainId = null;
         let editingUserEmail = null;
         let confirmCallback = null;
+        let userFollows = { topics: new Set(), users: new Set() };
+        let notifications = [];
+        let notifPollTimer = null;
+        let pendingGoogleProfile = null; // פרופיל גוגל שממתין להשלמת הרשמה
 
         /* ============ עזר: משתמשים ============ */
 
@@ -2228,6 +2443,7 @@
                 localStorage.setItem('forum_user', JSON.stringify(currentUser));
                 updateUserUI();
                 fetchPosts();
+                checkAndShowRegistration();
             }
         }
 
@@ -2250,11 +2466,315 @@
             currentUser = null;
             localStorage.removeItem('forum_user');
             updateUserUI();
+            userFollows = { topics: new Set(), users: new Set() };
+            notifications = [];
+            stopNotifPolling();
         }
 
         function goToMyProfile() {
             if (!currentUser) return;
             location.hash = '#user/' + userIdFromEmail(currentUser.email);
+        }
+
+        /* ============ הרשמה מחייבת (כתובת + התחייבות נווה יעקב) ============ */
+
+        async function checkAndShowRegistration() {
+            if (!currentUser) return;
+            try {
+                const res = await fetch(`${USERS_API_URL}?action=getUser&email=${encodeURIComponent(currentUser.email)}`);
+                const user = await res.json();
+                if (!user || !user.address || String(user.confirmed_neve_yaakov) !== 'TRUE') {
+                    document.getElementById('reg-address').value = (user && user.address) || '';
+                    document.getElementById('reg-confirm').checked = false;
+                    document.getElementById('registration-modal').style.display = 'flex';
+                    return;
+                }
+                document.getElementById('registration-modal').style.display = 'none';
+                currentUser.address = user.address;
+                currentUser.registered = true;
+                await Promise.all([loadUserFollows(), loadNotifications()]);
+                startNotifPolling();
+            } catch (e) {
+                // אם השרת לא זמין - לא חוסמים את המשתמש מהפורום
+                document.getElementById('registration-modal').style.display = 'none';
+            }
+        }
+
+        async function submitRegistration() {
+            const address = document.getElementById('reg-address').value.trim();
+            const confirmed = document.getElementById('reg-confirm').checked;
+            if (!address) {
+                showToast('נא להזין כתובת מגורים', 'error');
+                return;
+            }
+            if (!confirmed) {
+                showToast('יש לאשר שאת/ה מתגורר/ת בנווה יעקב כדי להמשיך', 'error');
+                return;
+            }
+            try {
+                await fetch(USERS_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'registerUser',
+                        data: {
+                            email: currentUser.email,
+                            name: currentUser.name,
+                            avatar: currentUser.picture,
+                            address: address,
+                            confirmed_neve_yaakov: true,
+                            uid: userIdFromEmail(currentUser.email)
+                        }
+                    })
+                });
+                currentUser.address = address;
+                currentUser.registered = true;
+                document.getElementById('registration-modal').style.display = 'none';
+                showToast('ההרשמה הושלמה בהצלחה', 'success');
+                await Promise.all([loadUserFollows(), loadNotifications()]);
+                startNotifPolling();
+            } catch (e) {
+                showToast('שגיאה בשמירת ההרשמה, נסו שוב', 'error');
+            }
+        }
+
+        /* ============ עוקבים (Follows) ============ */
+
+        async function loadUserFollows() {
+            if (!currentUser) return;
+            try {
+                const res = await fetch(`${USERS_API_URL}?action=getFollows&email=${encodeURIComponent(currentUser.email)}`);
+                const list = await res.json();
+                userFollows = { topics: new Set(), users: new Set() };
+                (Array.isArray(list) ? list : []).forEach(f => {
+                    if (f.type === 'topic') userFollows.topics.add(String(f.target_id));
+                    else if (f.type === 'user') userFollows.users.add(String(f.target_id).toLowerCase());
+                });
+            } catch (e) {}
+        }
+
+        function isFollowingTopic(topicId) {
+            return userFollows.topics.has(String(topicId));
+        }
+
+        function isFollowingUser(email) {
+            return userFollows.users.has(String(email).toLowerCase());
+        }
+
+        async function followTarget_(type, targetId) {
+            try {
+                await fetch(USERS_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'follow', data: { user_email: currentUser.email, type, target_id: targetId } })
+                });
+                if (type === 'topic') userFollows.topics.add(String(targetId));
+                else userFollows.users.add(String(targetId).toLowerCase());
+            } catch (e) {}
+        }
+
+        async function unfollowTarget_(type, targetId) {
+            try {
+                await fetch(USERS_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'unfollow', data: { user_email: currentUser.email, type, target_id: targetId } })
+                });
+                if (type === 'topic') userFollows.topics.delete(String(targetId));
+                else userFollows.users.delete(String(targetId).toLowerCase());
+            } catch (e) {}
+        }
+
+        // עקיבה שקטה, בלי טוסט - משמשת לעקיבה האוטומטית בפתיחת/כתיבה בנושא
+        async function autoFollowTopic(topicId) {
+            if (!currentUser || isFollowingTopic(topicId)) return;
+            await followTarget_('topic', topicId);
+        }
+
+        async function toggleFollowTopic(topicId) {
+            if (!currentUser) {
+                showToast('יש להתחבר כדי לעקוב אחרי נושא', 'error');
+                return;
+            }
+            if (isFollowingTopic(topicId)) {
+                await unfollowTarget_('topic', topicId);
+                showToast('הפסקת לעקוב אחרי הנושא', 'success');
+            } else {
+                await followTarget_('topic', topicId);
+                showToast('החל מעכשיו תקבל/י התראות על הנושא', 'success');
+            }
+            const mainPost = allPosts.find(p => p.topic_id === topicId && p.title);
+            if (mainPost) renderThreadHeader(mainPost, topicId);
+        }
+
+        async function toggleFollowUser(email) {
+            if (!currentUser) {
+                showToast('יש להתחבר כדי לעקוב אחרי משתמש', 'error');
+                return;
+            }
+            if (String(email).toLowerCase() === String(currentUser.email).toLowerCase()) return;
+            if (isFollowingUser(email)) {
+                await unfollowTarget_('user', email);
+                showToast('הפסקת לעקוב אחרי המשתמש', 'success');
+            } else {
+                await followTarget_('user', email);
+                showToast('החל מעכשיו תקבל/י התראות על המשתמש', 'success');
+            }
+            openUserProfile(userIdFromEmail(email));
+        }
+
+        /* ============ התראות (Notifications) ============ */
+
+        async function loadNotifications() {
+            if (!currentUser) return;
+            try {
+                const res = await fetch(`${USERS_API_URL}?action=getNotifications&email=${encodeURIComponent(currentUser.email)}`);
+                const list = await res.json();
+                notifications = Array.isArray(list) ? list : [];
+                renderNotifBell();
+                renderNotifDropdown();
+            } catch (e) {}
+        }
+
+        function startNotifPolling() {
+            document.getElementById('notif-bell-container').style.display = 'inline-flex';
+            if (notifPollTimer) return;
+            notifPollTimer = setInterval(() => { if (currentUser && !document.hidden) loadNotifications(); }, 15000);
+        }
+
+        function stopNotifPolling() {
+            if (notifPollTimer) { clearInterval(notifPollTimer); notifPollTimer = null; }
+            const bellContainer = document.getElementById('notif-bell-container');
+            if (bellContainer) bellContainer.style.display = 'none';
+            const dropdown = document.getElementById('notif-dropdown');
+            if (dropdown) dropdown.classList.remove('open');
+        }
+
+        function renderNotifBell() {
+            const unreadCount = notifications.filter(n => String(n.is_read) !== 'TRUE').length;
+            const badge = document.getElementById('notif-badge');
+            if (!badge) return;
+            if (unreadCount > 0) {
+                badge.style.display = 'flex';
+                badge.innerText = unreadCount > 99 ? '99+' : unreadCount;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function renderNotifDropdown() {
+            const list = document.getElementById('notif-list');
+            if (!list) return;
+            if (notifications.length === 0) {
+                list.innerHTML = '<div class="notif-empty">אין עדיין התראות</div>';
+                return;
+            }
+            list.innerHTML = notifications.map(n => {
+                const unread = String(n.is_read) !== 'TRUE';
+                return `
+                    <div class="notif-item ${unread ? 'unread' : ''}" onclick="openNotification('${n.id}')">
+                        ${unread ? '<div class="notif-item-dot"></div>' : '<div style="width:8px;flex-shrink:0;"></div>'}
+                        <div>
+                            <div class="notif-item-text">${escapeHtml(n.message || '')}</div>
+                            <div class="notif-item-time">${timeAgo(n.created_at)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleNotifPanel() {
+            document.getElementById('notif-dropdown').classList.toggle('open');
+        }
+
+        document.addEventListener('click', (e) => {
+            const container = document.getElementById('notif-bell-container');
+            const dropdown = document.getElementById('notif-dropdown');
+            if (container && dropdown && !container.contains(e.target)) {
+                dropdown.classList.remove('open');
+            }
+        });
+
+        async function markNotificationRead_(id) {
+            try {
+                await fetch(USERS_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'markRead', data: { id } })
+                });
+            } catch (e) {}
+        }
+
+        async function markAllNotificationsRead() {
+            if (!currentUser || notifications.length === 0) return;
+            notifications.forEach(n => n.is_read = 'TRUE');
+            renderNotifBell();
+            renderNotifDropdown();
+            try {
+                await fetch(USERS_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'markRead', data: { user_email: currentUser.email } })
+                });
+            } catch (e) {}
+        }
+
+        function openNotification(id) {
+            const n = notifications.find(x => String(x.id) === String(id));
+            if (!n) return;
+            if (String(n.is_read) !== 'TRUE') {
+                n.is_read = 'TRUE';
+                renderNotifBell();
+                renderNotifDropdown();
+                markNotificationRead_(id);
+            }
+            document.getElementById('notif-dropdown').classList.remove('open');
+            if (n.post_id) {
+                location.hash = '#post/' + n.post_id;
+            } else if (n.topic_id) {
+                location.hash = '#topic/' + n.topic_id;
+            }
+        }
+
+        // שולח התראות לכל העוקבים אחרי נושא מסוים (חוץ מהכותב עצמו)
+        async function notifyTopicFollowers(topicId, message, type, postId) {
+            if (!currentUser) return;
+            try {
+                const res = await fetch(`${USERS_API_URL}?action=getFollowers&type=topic&target_id=${encodeURIComponent(topicId)}`);
+                const followers = await res.json();
+                const targets = (Array.isArray(followers) ? followers : [])
+                    .filter(f => String(f.user_email).toLowerCase() !== String(currentUser.email).toLowerCase())
+                    .map(f => ({
+                        user_email: f.user_email, type, topic_id: topicId, post_id: postId || '',
+                        actor_name: currentUser.name, actor_email: currentUser.email, message
+                    }));
+                if (targets.length === 0) return;
+                await fetch(USERS_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'addNotification', data: targets })
+                });
+            } catch (e) {}
+        }
+
+        // שולח התראות לכל העוקבים אחרי משתמש מסוים (למשל כשהוא פותח נושא חדש)
+        async function notifyUserFollowers(authorEmail, message, type, topicId) {
+            try {
+                const res = await fetch(`${USERS_API_URL}?action=getFollowers&type=user&target_id=${encodeURIComponent(authorEmail)}`);
+                const followers = await res.json();
+                const targets = (Array.isArray(followers) ? followers : [])
+                    .filter(f => String(f.user_email).toLowerCase() !== String(authorEmail).toLowerCase())
+                    .map(f => ({
+                        user_email: f.user_email, type, topic_id: topicId || '', post_id: '',
+                        actor_name: currentUser.name, actor_email: currentUser.email, message
+                    }));
+                if (targets.length === 0) return;
+                await fetch(USERS_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'addNotification', data: targets })
+                });
+            } catch (e) {}
         }
 
         /* ============ טעינת נתונים ============ */
@@ -2827,6 +3347,12 @@
                     <div>
                         ${adminControls}
                         ${ownerControls}
+                        ${currentUser ? `
+                            <button class="follow-btn ${isFollowingTopic(topicId) ? 'following' : ''}" onclick="toggleFollowTopic('${topicId}')">
+                                <i class="fa-solid ${isFollowingTopic(topicId) ? 'fa-bell' : 'fa-bell-slash'}"></i>
+                                ${isFollowingTopic(topicId) ? 'עוקב/ת' : 'עקוב/י'}
+                            </button>
+                        ` : ''}
                         <button class="icon-btn" title="העתק קישור לנושא" onclick="copyLink('topic', '${topicId}')"><i class="fa-solid fa-link"></i></button>
                     </div>
                 </div>
@@ -3125,6 +3651,11 @@
                 await fetchPosts();
                 location.hash = '#topic/' + newTopicId;
                 showToast('הנושא פורסם בהצלחה', 'success');
+
+                if (currentUser) {
+                    autoFollowTopic(newTopicId);
+                    notifyUserFollowers(currentUser.email, `${currentUser.name} פתח/ה נושא חדש: "${title}"`, 'new_topic', newTopicId);
+                }
             } catch (err) {
                 showToast('שגיאה בשמירת הנושא', 'error');
             }
@@ -3203,6 +3734,10 @@
                 await fetchPosts();
                 openThread(currentTopicId, true);
                 showToast('התגובה נשלחה', 'success');
+
+                const mainPost = allPosts.find(p => p.topic_id === currentTopicId && p.title);
+                autoFollowTopic(currentTopicId);
+                notifyTopicFollowers(currentTopicId, `${currentUser.name} הגיב/ה בנושא "${mainPost ? mainPost.title : ''}"`, 'reply', replyPost.id);
             } catch (err) {
                 showToast('שגיאה בשליחת התגובה', 'error');
             }
@@ -3596,7 +4131,15 @@
                         <span><i class="fa-solid fa-list"></i> ${topicsStarted} נושאים</span>
                     </div>
                 </div>
-                ${(currentUser && currentUser.isAdmin) ? `<button class="btn-secondary" style="margin-right:auto;" onclick="openEditUserModal('${uid}')"><i class="fa-solid fa-pen"></i> עריכת שם ופרופיל</button>` : ''}
+                <div style="margin-right:auto; display:flex; gap:10px;">
+                    ${(currentUser && currentUser.email !== user.email) ? `
+                        <button class="follow-btn ${isFollowingUser(user.email) ? 'following' : ''}" onclick="toggleFollowUser('${user.email}')">
+                            <i class="fa-solid ${isFollowingUser(user.email) ? 'fa-bell' : 'fa-bell-slash'}"></i>
+                            ${isFollowingUser(user.email) ? 'עוקב/ת' : 'עקוב/י'}
+                        </button>
+                    ` : ''}
+                    ${(currentUser && currentUser.isAdmin) ? `<button class="btn-secondary" onclick="openEditUserModal('${uid}')"><i class="fa-solid fa-pen"></i> עריכת שם ופרופיל</button>` : ''}
+                </div>
             `;
 
             const listEl = document.getElementById('profile-posts');
@@ -3666,7 +4209,7 @@
         let refreshInFlight = false;
 
         function isAnyModalOpen() {
-            return ['topic-modal', 'category-modal', 'edit-modal', 'confirm-modal', 'user-edit-modal'].some(id => {
+            return ['topic-modal', 'category-modal', 'edit-modal', 'confirm-modal', 'user-edit-modal', 'registration-modal'].some(id => {
                 const el = document.getElementById(id);
                 return el && el.style.display === 'flex';
             });
@@ -3750,6 +4293,7 @@
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
                 updateUserUI();
+                checkAndShowRegistration();
             }
             buildToolbar('new-topic-toolbar', 'new-topic-content');
             buildToolbar('reply-toolbar', 'reply-input');
