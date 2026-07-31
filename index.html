@@ -1446,6 +1446,78 @@
             .sidebar-panel { width: calc(100% - 56px); }
         }
 
+        /* תפריט פרופיל בסרגל השמאלי */
+        .profile-menu-container {
+            position: relative;
+        }
+
+        .profile-dropdown {
+            position: absolute;
+            top: 0;
+            left: 100%;
+            margin-left: 10px;
+            width: 230px;
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 500;
+        }
+
+        .profile-dropdown.open {
+            display: flex;
+        }
+
+        .profile-dropdown-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .profile-dropdown-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .profile-dropdown-actions {
+            display: flex;
+            flex-direction: column;
+            padding: 6px;
+        }
+
+        .profile-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            border: none;
+            background: none;
+            text-align: right;
+            padding: 10px 10px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .profile-dropdown-item:hover {
+            background: #f1f5f9;
+        }
+
+        .profile-dropdown-item.logout-item {
+            color: var(--dislike-color);
+        }
+
         /* פעמון התראות */
         .notif-bell-container {
             position: relative;
@@ -1670,9 +1742,25 @@
 
     <!-- סרגל צר בקצה השני - פרופיל, חיפוש, התראות -->
     <div class="side-rail-left" id="side-rail-left">
-        <button type="button" class="rail-icon-btn rail-avatar-btn" id="rail-avatar-btn" style="display:none;" onclick="goToMyProfile()" title="הפרופיל שלי">
-            <span id="rail-avatar"></span>
-        </button>
+        <div id="profile-menu-container" class="profile-menu-container">
+            <button type="button" class="rail-icon-btn rail-avatar-btn" id="rail-avatar-btn" style="display:none;" onclick="toggleProfileMenu(); return false;" title="הפרופיל שלי">
+                <span id="rail-avatar"></span>
+            </button>
+            <div id="profile-dropdown" class="profile-dropdown">
+                <div class="profile-dropdown-header">
+                    <span id="profile-menu-avatar"></span>
+                    <span id="profile-menu-name" class="profile-dropdown-name"></span>
+                </div>
+                <div class="profile-dropdown-actions">
+                    <button type="button" class="profile-dropdown-item" onclick="goToMyProfile()">
+                        <i class="fa-solid fa-user"></i> כניסה לפרופיל
+                    </button>
+                    <button type="button" class="profile-dropdown-item logout-item" onclick="logout(); closeProfileMenu();">
+                        <i class="fa-solid fa-right-from-bracket"></i> התנתקות
+                    </button>
+                </div>
+            </div>
+        </div>
         <button type="button" class="rail-icon-btn" onclick="openSearchModal()" title="חיפוש"><i class="fa-solid fa-magnifying-glass"></i></button>
         <div id="notif-bell-container" class="notif-bell-container" style="display:none;">
             <button type="button" class="rail-icon-btn notif-bell-btn" onclick="toggleNotifPanel(); return false;" title="התראות">
@@ -1727,12 +1815,6 @@
                 </div>
                 <div id="google-btn-container">
                     <div class="g_id_signin" data-type="standard"></div>
-                </div>
-                <div id="user-info" class="user-profile" style="display: none;">
-                    <span id="user-avatar" class="user-avatar" style="display:inline-flex; cursor:pointer;" onclick="goToMyProfile()"></span>
-                    <span id="user-name" class="user-name-link" style="font-weight: 500;" onclick="goToMyProfile()"></span>
-                    <span id="admin-indicator" class="badge-admin" style="display:none;">מנהל</span>
-                    <button onclick="logout()" class="btn-secondary" style="margin-right: 10px;">התנתק</button>
                 </div>
             </div>
         </header>
@@ -2581,19 +2663,29 @@
         function updateUserUI() {
             if (currentUser) {
                 document.getElementById('google-btn-container').style.display = 'none';
-                document.getElementById('user-info').style.display = 'flex';
-                document.getElementById('user-name').innerText = currentUser.name;
-                document.getElementById('user-avatar').innerHTML = avatarHtml(currentUser.name, currentUser.email, currentUser.picture, 36);
-                document.getElementById('admin-indicator').style.display = currentUser.isAdmin ? 'inline-block' : 'none';
                 document.getElementById('new-category-btn').style.display = currentUser.isAdmin ? 'inline-flex' : 'none';
                 document.getElementById('rail-avatar-btn').style.display = 'flex';
                 document.getElementById('rail-avatar').innerHTML = avatarHtml(currentUser.name, currentUser.email, currentUser.picture, 32);
+                document.getElementById('profile-menu-avatar').innerHTML = avatarHtml(currentUser.name, currentUser.email, currentUser.picture, 36);
+                document.getElementById('profile-menu-name').innerText = currentUser.name;
             } else {
                 document.getElementById('google-btn-container').style.display = 'block';
-                document.getElementById('user-info').style.display = 'none';
                 document.getElementById('new-category-btn').style.display = 'none';
                 document.getElementById('rail-avatar-btn').style.display = 'none';
+                closeProfileMenu();
             }
+        }
+
+        function toggleProfileMenu() {
+            document.getElementById('profile-dropdown').classList.toggle('open');
+            // סגירת תפריט ההתראות אם פתוח, כדי שלא ייפתחו שני תפריטים יחד
+            const notifDropdown = document.getElementById('notif-dropdown');
+            if (notifDropdown) notifDropdown.classList.remove('open');
+        }
+
+        function closeProfileMenu() {
+            const dropdown = document.getElementById('profile-dropdown');
+            if (dropdown) dropdown.classList.remove('open');
         }
 
         function logout() {
@@ -2607,6 +2699,7 @@
 
         function goToMyProfile() {
             if (!currentUser) return;
+            closeProfileMenu();
             location.hash = '#user/' + userIdFromEmail(currentUser.email);
         }
 
@@ -2873,6 +2966,12 @@
             const dropdown = document.getElementById('notif-dropdown');
             if (container && dropdown && !container.contains(e.target)) {
                 dropdown.classList.remove('open');
+            }
+
+            const profileContainer = document.getElementById('profile-menu-container');
+            const profileDropdown = document.getElementById('profile-dropdown');
+            if (profileContainer && profileDropdown && !profileContainer.contains(e.target)) {
+                profileDropdown.classList.remove('open');
             }
         });
 
