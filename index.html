@@ -47,14 +47,14 @@
 
         /* סרגל צדי בסגנון NodeBB */
         .sidebar {
-            width: 70px;
+            width: 56px;
             background: #ffffff;
             border-left: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px 0;
-            gap: 14px;
+            padding: 16px 0;
+            gap: 10px;
             position: fixed;
             right: 0;
             top: 0;
@@ -63,31 +63,31 @@
         }
 
         .sidebar-logo {
-            width: 42px;
-            height: 42px;
+            width: 34px;
+            height: 34px;
             background: linear-gradient(135deg, var(--brand-a), var(--brand-b));
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 14px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
             box-shadow: 0 2px 8px rgba(3, 105, 161, 0.35);
         }
 
         .sidebar-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--text-muted);
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 18px;
+            font-size: 14.5px;
             text-decoration: none;
             position: relative;
             background: none;
@@ -100,10 +100,60 @@
         }
 
         .sidebar-divider {
-            width: 28px;
+            width: 22px;
             height: 1px;
             background: var(--border-color);
             margin: 2px 0;
+        }
+
+        /* סרגל צר נוסף בקצה השני - פרופיל, חיפוש, התראות */
+        .side-rail-left {
+            width: 56px;
+            background: #ffffff;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 0;
+            gap: 10px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 200;
+        }
+
+        .rail-icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14.5px;
+            background: none;
+            border: none;
+            padding: 0;
+            position: relative;
+        }
+
+        .rail-icon-btn:hover {
+            background: #f1f5f9;
+            color: var(--primary);
+        }
+
+        .rail-avatar-btn {
+            padding: 0;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+
+        .rail-avatar-btn:hover {
+            background: none;
+            box-shadow: 0 0 0 2px var(--primary-light);
         }
 
         /* פאנל צד נגלל (נושאים אחרונים / פופולריים / משתמשים) */
@@ -111,7 +161,7 @@
             position: fixed;
             top: 0;
             bottom: 0;
-            right: 70px;
+            right: 56px;
             width: 300px;
             background: #ffffff;
             border-left: 1px solid var(--border-color);
@@ -336,7 +386,8 @@
 
         /* אזור תוכן מרכזי */
         .main-wrapper {
-            margin-right: 70px;
+            margin-right: 56px;
+            margin-left: 56px;
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -1307,6 +1358,25 @@
         }
 
         /* פרופיל משתמש */
+        .search-modal-input {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            margin-bottom: 12px;
+        }
+
+        .search-modal-input:focus {
+            border-color: var(--primary);
+        }
+
+        .search-modal-results {
+            max-height: 360px;
+            overflow-y: auto;
+        }
+
         .profile-header {
             background: #fff;
             border: 1px solid var(--border-color);
@@ -1373,7 +1443,7 @@
         }
 
         @media (max-width: 700px) {
-            .sidebar-panel { width: calc(100% - 70px); }
+            .sidebar-panel { width: calc(100% - 56px); }
         }
 
         /* פעמון התראות */
@@ -1382,17 +1452,17 @@
         }
 
         .notif-bell-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            background: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            border: none;
+            background: none;
             color: var(--text-muted);
             display: inline-flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14.5px;
             position: relative;
             transition: all 0.15s;
         }
@@ -1400,13 +1470,12 @@
         .notif-bell-btn:hover {
             background: #f1f5f9;
             color: var(--primary);
-            border-color: var(--primary);
         }
 
         .notif-badge {
             position: absolute;
-            top: -5px;
-            left: -5px;
+            top: -3px;
+            left: -3px;
             background: var(--admin-badge);
             color: #fff;
             font-size: 10px;
@@ -1423,8 +1492,9 @@
 
         .notif-dropdown {
             position: absolute;
-            top: 50px;
-            left: 0;
+            top: 0;
+            left: 100%;
+            margin-left: 10px;
             width: 340px;
             max-height: 420px;
             background: #fff;
@@ -1598,6 +1668,39 @@
         <a href="#" class="sidebar-icon" id="nav-tags" onclick="location.hash = '#tags'; return false;" title="תגיות"><i class="fa-solid fa-tag"></i></a>
     </div>
 
+    <!-- סרגל צר בקצה השני - פרופיל, חיפוש, התראות -->
+    <div class="side-rail-left" id="side-rail-left">
+        <button type="button" class="rail-icon-btn rail-avatar-btn" id="rail-avatar-btn" style="display:none;" onclick="goToMyProfile()" title="הפרופיל שלי">
+            <span id="rail-avatar"></span>
+        </button>
+        <button type="button" class="rail-icon-btn" onclick="openSearchModal()" title="חיפוש"><i class="fa-solid fa-magnifying-glass"></i></button>
+        <div id="notif-bell-container" class="notif-bell-container" style="display:none;">
+            <button type="button" class="rail-icon-btn notif-bell-btn" onclick="toggleNotifPanel(); return false;" title="התראות">
+                <i class="fa-solid fa-bell"></i>
+                <span id="notif-badge" class="notif-badge" style="display:none;">0</span>
+            </button>
+            <div id="notif-dropdown" class="notif-dropdown">
+                <div class="notif-dropdown-header">
+                    <span>התראות</span>
+                    <span class="notif-mark-all" onclick="markAllNotificationsRead()">סמן הכל כנקרא</span>
+                </div>
+                <div id="notif-list" class="notif-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- חלון חיפוש כללי -->
+    <div id="search-modal" class="modal-overlay">
+        <div class="modal" style="max-width: 460px;">
+            <div class="modal-header">
+                <h3>חיפוש בפורום</h3>
+                <span class="modal-close" onclick="closeSearchModal()">&times;</span>
+            </div>
+            <input type="text" id="global-search-input" class="search-modal-input" placeholder="הקלד/י לחיפוש נושאים..." oninput="renderGlobalSearchResults()">
+            <div id="search-modal-results" class="search-modal-results"></div>
+        </div>
+    </div>
+
     <!-- פאנל נגלל -->
     <div class="sidebar-panel" id="sidebar-panel">
         <div class="panel-header">
@@ -1624,19 +1727,6 @@
                 </div>
                 <div id="google-btn-container">
                     <div class="g_id_signin" data-type="standard"></div>
-                </div>
-                <div id="notif-bell-container" class="notif-bell-container" style="display:none;">
-                    <button class="notif-bell-btn" onclick="toggleNotifPanel(); return false;" title="התראות">
-                        <i class="fa-solid fa-bell"></i>
-                        <span id="notif-badge" class="notif-badge" style="display:none;">0</span>
-                    </button>
-                    <div id="notif-dropdown" class="notif-dropdown">
-                        <div class="notif-dropdown-header">
-                            <span>התראות</span>
-                            <span class="notif-mark-all" onclick="markAllNotificationsRead()">סמן הכל כנקרא</span>
-                        </div>
-                        <div id="notif-list" class="notif-list"></div>
-                    </div>
                 </div>
                 <div id="user-info" class="user-profile" style="display: none;">
                     <span id="user-avatar" class="user-avatar" style="display:inline-flex; cursor:pointer;" onclick="goToMyProfile()"></span>
@@ -2496,10 +2586,13 @@
                 document.getElementById('user-avatar').innerHTML = avatarHtml(currentUser.name, currentUser.email, currentUser.picture, 36);
                 document.getElementById('admin-indicator').style.display = currentUser.isAdmin ? 'inline-block' : 'none';
                 document.getElementById('new-category-btn').style.display = currentUser.isAdmin ? 'inline-flex' : 'none';
+                document.getElementById('rail-avatar-btn').style.display = 'flex';
+                document.getElementById('rail-avatar').innerHTML = avatarHtml(currentUser.name, currentUser.email, currentUser.picture, 32);
             } else {
                 document.getElementById('google-btn-container').style.display = 'block';
                 document.getElementById('user-info').style.display = 'none';
                 document.getElementById('new-category-btn').style.display = 'none';
+                document.getElementById('rail-avatar-btn').style.display = 'none';
             }
         }
 
@@ -4011,6 +4104,47 @@
             else setActiveNav(null);
         }
 
+        /* ============ חיפוש כללי (סרגל שמאלי) ============ */
+
+        function openSearchModal() {
+            document.getElementById('search-modal').style.display = 'flex';
+            const input = document.getElementById('global-search-input');
+            input.value = '';
+            renderGlobalSearchResults();
+            setTimeout(() => input.focus(), 50);
+        }
+
+        function closeSearchModal() {
+            document.getElementById('search-modal').style.display = 'none';
+        }
+
+        function renderGlobalSearchResults() {
+            const query = (document.getElementById('global-search-input').value || '').trim().toLowerCase();
+            const results = document.getElementById('search-modal-results');
+            if (!query) {
+                results.innerHTML = '<div class="panel-empty">הקלד/י כדי לחפש נושאים בפורום</div>';
+                return;
+            }
+            const matches = allPosts
+                .filter(p => p.title && (
+                    p.title.toLowerCase().includes(query) ||
+                    (p.content || '').toLowerCase().includes(query)
+                ))
+                .slice(0, 30);
+            if (matches.length === 0) {
+                results.innerHTML = '<div class="panel-empty">לא נמצאו נושאים תואמים</div>';
+                return;
+            }
+            results.innerHTML = '';
+            matches.forEach(topic => {
+                const item = document.createElement('div');
+                item.className = 'panel-item';
+                item.onclick = () => { closeSearchModal(); location.hash = '#topic/' + topic.topic_id; };
+                item.innerHTML = `<div><div class="panel-item-title">${escapeHtml(topic.title)}</div><div class="panel-item-sub">${escapeHtml(getCategoryName(topic.category))}</div></div>`;
+                results.appendChild(item);
+            });
+        }
+
         /* ============ עמוד משתמשים (רשת מלאה) ============ */
 
         let usersSortMode = 'posts';
@@ -4380,7 +4514,7 @@
         let refreshInFlight = false;
 
         function isAnyModalOpen() {
-            return ['topic-modal', 'category-modal', 'edit-modal', 'confirm-modal', 'user-edit-modal', 'registration-modal'].some(id => {
+            return ['topic-modal', 'category-modal', 'edit-modal', 'confirm-modal', 'user-edit-modal', 'registration-modal', 'search-modal'].some(id => {
                 const el = document.getElementById(id);
                 return el && el.style.display === 'flex';
             });
