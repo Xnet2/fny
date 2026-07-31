@@ -2240,6 +2240,7 @@
         let userFollows = { topics: new Set(), users: new Set() };
         let notifications = [];
         let notifPollTimer = null;
+        let locallyReadNotifIds = new Set(); // מזהי התראות שסומנו כנקראו מקומית, כדי שפולינג לא ידרוס אותן חזרה ל"לא נקרא"
         let pendingGoogleProfile = null; // פרופיל גוגל שממתין להשלמת הרשמה
 
         /* ============ עזר: משתמשים ============ */
@@ -2904,7 +2905,13 @@
             try {
                 const res = await fetch(`${USERS_API_URL}?action=getNotifications&email=${encodeURIComponent(currentUser.email)}`);
                 const list = await res.json();
-                notifications = Array.isArray(list) ? list : [];
+                const fresh = Array.isArray(list) ? list : [];
+                // אם התראה כבר סומנה כנקראה מקומית, אל תיתן לתשובת שרת "ישנה" (שעדיין לא השתקפה בגיליון)
+                // להחזיר אותה למצב לא-נקרא. זה מונע את התופעה של התראה שחוזרת להתריע אחרי שסומנה כנקראה.
+                fresh.forEach(n => {
+                    if (locallyReadNotifIds.has(String(n.id))) n.is_read = 'TRUE';
+                });
+                notifications = fresh;
                 renderNotifBell();
                 renderNotifDropdown();
             } catch (e) {}
@@ -2976,6 +2983,7 @@
         });
 
         async function markNotificationRead_(id) {
+            locallyReadNotifIds.add(String(id));
             try {
                 await fetch(USERS_API_URL, {
                     method: 'POST',
@@ -2987,7 +2995,7 @@
 
         async function markAllNotificationsRead() {
             if (!currentUser || notifications.length === 0) return;
-            notifications.forEach(n => n.is_read = 'TRUE');
+            notifications.forEach(n => { n.is_read = 'TRUE'; locallyReadNotifIds.add(String(n.id)); });
             renderNotifBell();
             renderNotifDropdown();
             try {
