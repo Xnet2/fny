@@ -1292,6 +1292,72 @@
             margin-top: 8px;
         }
 
+        /* תיוג משתמשים (@) */
+        .mention-link {
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .mention-link:hover {
+            text-decoration: underline;
+        }
+
+        .mention-dropdown {
+            display: none;
+            position: fixed;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 600;
+            padding: 6px;
+        }
+
+        .mention-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 8px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 13.5px;
+        }
+
+        .mention-item:hover, .mention-item.active {
+            background: var(--primary-light);
+        }
+
+        .mention-item span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* כפתור ציטוט טקסט מסומן */
+        .selection-quote-btn {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            position: fixed;
+            transform: translate(-50%, -100%);
+            background: #1e293b;
+            color: #fff;
+            border: none;
+            padding: 7px 12px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            cursor: pointer;
+            z-index: 600;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
+        }
+
+        .selection-quote-btn:hover {
+            background: #0f172a;
+        }
+
         .editor-toolbar button {
             width: 30px;
             height: 30px;
@@ -2132,6 +2198,14 @@
         </div>
     </div>
 
+    <!-- תפריט תיוג משתמשים (@) -->
+    <div class="mention-dropdown" id="mention-dropdown"></div>
+
+    <!-- כפתור ציטוט טקסט מסומן -->
+    <button type="button" class="selection-quote-btn" id="selection-quote-btn">
+        <i class="fa-solid fa-quote-right"></i> צטט
+    </button>
+
     <!-- טוסטים -->
     <div class="toast-container" id="toast-container"></div>
 
@@ -2395,6 +2469,8 @@
         function renderContent(str) {
             if (!str) return '';
             let s = escapeHtml(str);
+            // תיוגי משתמשים בפורמט @[שם](uid) הופכים לקישור לפרופיל, לפני עיבוד קישורים רגילים
+            s = s.replace(/@\[([^\]]+)\]\(([^()\s]+)\)/g, '<a href="#user/$2" class="mention-link" onclick="event.stopPropagation();">@$1</a>');
             s = s.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" onclick="window.open(this.src,\'_blank\')">');
             s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:var(--primary);">$1</a>');
             s = s.replace(/\*\*([^\*\n]+)\*\*/g, '<strong>$1</strong>');
@@ -2642,6 +2718,151 @@
                     }
                 }
             });
+        }
+
+        /* ============ תיוג משתמשים (@mentions) ============ */
+
+        let mentionState = { active: false, textareaId: null, atPos: -1, query: '' };
+        let mentionActiveIndex = 0;
+
+        function attachMentionSupport(textareaId) {
+            const textarea = document.getElementById(textareaId);
+            if (!textarea) return;
+            textarea.addEventListener('input', () => handleMentionInput(textareaId));
+            textarea.addEventListener('keydown', (e) => handleMentionKeydown(textareaId, e));
+            // דיליי קטן לפני סגירה כדי שקליק על פריט ברשימה יספיק להירשם
+            textarea.addEventListener('blur', () => setTimeout(closeMentionDropdown, 150));
+        }
+
+        // בודק אם הסמן נמצא כרגע בתוך תיוג פעיל (אחרי @) ופותח/מעדכן את התפריט בהתאם
+        function handleMentionInput(textareaId) {
+            const textarea = document.getElementById(textareaId);
+            if (!textarea) return;
+            const pos = textarea.selectionStart;
+            const val = textarea.value;
+            const uptoCursor = val.slice(0, pos);
+            const atIndex = uptoCursor.lastIndexOf('@');
+            if (atIndex === -1) { closeMentionDropdown(); return; }
+
+            const between = uptoCursor.slice(atIndex + 1);
+            // אם יש ירידת שורה, @ נוסף, או שהטקסט התיוג ארוך מדי - זה כבר לא תיוג פעיל
+            if (/[\n@]/.test(between) || between.length > 25) { closeMentionDropdown(); return; }
+            // ה-@ צריך להיות בתחילת הטקסט או אחרי רווח/ירידת שורה, כדי לא לתפוס כתובות מייל וכדומה
+            const charBeforeAt = atIndex > 0 ? uptoCursor[atIndex - 1] : ' ';
+            if (atIndex !== 0 && !/[\s\n]/.test(charBeforeAt)) { closeMentionDropdown(); return; }
+
+            mentionState = { active: true, textareaId, atPos: atIndex, query: between };
+            mentionActiveIndex = 0;
+            openMentionDropdown(textareaId, between);
+        }
+
+        function openMentionDropdown(textareaId, query) {
+            const dropdown = document.getElementById('mention-dropdown');
+            if (!dropdown) return;
+            const q = query.toLowerCase();
+            const users = getUniqueUsers().filter(u => u.name && u.name.toLowerCase().includes(q));
+
+            if (users.length === 0) { closeMentionDropdown(); return; }
+
+            dropdown.innerHTML = users.slice(0, 6).map((u, i) => `
+                <div class="mention-item${i === 0 ? ' active' : ''}" data-uid="${u.uid}" data-name="${escapeHtml(u.name)}" onmousedown="event.preventDefault(); selectMention('${u.uid}', '${u.name.replace(/'/g, "\\'")}');">
+                    ${avatarHtml(u.name, u.email, u.avatar, 24)}
+                    <span>${escapeHtml(u.name)}</span>
+                </div>
+            `).join('');
+
+            positionMentionDropdown(textareaId);
+            dropdown.style.display = 'block';
+        }
+
+        function positionMentionDropdown(textareaId) {
+            const textarea = document.getElementById(textareaId);
+            const dropdown = document.getElementById('mention-dropdown');
+            if (!textarea || !dropdown) return;
+            const rect = textarea.getBoundingClientRect();
+            dropdown.style.left = rect.left + 'px';
+            dropdown.style.top = (rect.bottom + 4) + 'px';
+            dropdown.style.width = Math.min(260, rect.width) + 'px';
+        }
+
+        function handleMentionKeydown(textareaId, e) {
+            const dropdown = document.getElementById('mention-dropdown');
+            if (!mentionState.active || !dropdown || dropdown.style.display !== 'block') return;
+            const items = dropdown.querySelectorAll('.mention-item');
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                mentionActiveIndex = (mentionActiveIndex + 1) % items.length;
+                items.forEach((it, i) => it.classList.toggle('active', i === mentionActiveIndex));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                mentionActiveIndex = (mentionActiveIndex - 1 + items.length) % items.length;
+                items.forEach((it, i) => it.classList.toggle('active', i === mentionActiveIndex));
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                e.preventDefault();
+                const el = items[mentionActiveIndex] || items[0];
+                selectMention(el.dataset.uid, el.dataset.name);
+            } else if (e.key === 'Escape') {
+                closeMentionDropdown();
+            }
+        }
+
+        // מכניס לטקסט תיוג בפורמט @[שם](uid) - כך אפשר לזהות תיוג בבטחה גם לשמות עם רווחים
+        function selectMention(uid, name) {
+            const textareaId = mentionState.textareaId;
+            const textarea = document.getElementById(textareaId);
+            if (!textarea || !mentionState.active) { closeMentionDropdown(); return; }
+
+            const val = textarea.value;
+            const before = val.slice(0, mentionState.atPos);
+            const afterCursorPos = mentionState.atPos + 1 + mentionState.query.length;
+            const after = val.slice(afterCursorPos);
+            const insertion = `@[${name}](${uid}) `;
+            textarea.value = before + insertion + after;
+
+            const newPos = before.length + insertion.length;
+            textarea.focus();
+            textarea.selectionStart = textarea.selectionEnd = newPos;
+            closeMentionDropdown();
+        }
+
+        function closeMentionDropdown() {
+            mentionState = { active: false, textareaId: null, atPos: -1, query: '' };
+            const dropdown = document.getElementById('mention-dropdown');
+            if (dropdown) dropdown.style.display = 'none';
+        }
+
+        // מוצא את כל ה-uid-ים המתויגים בתוכן הודעה (לפי @[שם](uid))
+        function extractMentionedUids(content) {
+            if (!content) return [];
+            const re = /@\[[^\]]+\]\(([^()\s]+)\)/g;
+            const uids = new Set();
+            let m;
+            while ((m = re.exec(content))) uids.add(m[1]);
+            return Array.from(uids);
+        }
+
+        // שולח התראת "תיוג" ישירות למשתמשים שתויגו בהודעה (לא לעוקבים, אלא למי שתויג בפועל)
+        async function notifyMentionedUsers(content, message, topicId, postId) {
+            if (!currentUser) return;
+            const uids = extractMentionedUids(content);
+            if (uids.length === 0) return;
+            try {
+                const targets = uids
+                    .map(uid => findUserByUid(uid))
+                    .filter(u => u && u.email && String(u.email).toLowerCase() !== String(currentUser.email).toLowerCase())
+                    .map(u => ({
+                        user_email: u.email, type: 'mention', topic_id: topicId || '', post_id: postId || '',
+                        actor_name: currentUser.name, actor_email: currentUser.email, message
+                    }));
+                if (targets.length === 0) return;
+                await fetch(USERS_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'addNotification', data: targets })
+                });
+            } catch (e) {}
         }
 
         /* ============ Google Auth ============ */
@@ -3088,6 +3309,15 @@
             } catch (e) {}
         }
 
+        // ממזג נתונים שהתקבלו מהשרת עם פוסטים אופטימיים שעדיין בהמתנה (pending) ולא הגיעו
+        // עדיין ל-API הקריאה של השרת - כדי שפוסט חדש לא "יעלם" לרגע בין הרענון האוטומטי
+        // לבין הרגע שהוא באמת מופיע בתשובת השרת (השהיית תפוצה של השרת)
+        function mergeServerData(serverPosts) {
+            const serverIds = new Set(serverPosts.map(p => p.id));
+            const pendingLocal = allPosts.filter(p => p._status === 'pending' && !serverIds.has(p.id));
+            return serverPosts.concat(pendingLocal);
+        }
+
         /* ============ טעינת נתונים ============ */
 
         // מציגים מייד נתונים שמורים מהפעם הקודמת (אם יש), כדי שהקטגוריות והתוכן
@@ -3112,13 +3342,13 @@
                 const res = await fetch(API_URL);
                 const json = await res.json();
                 if (!Array.isArray(json)) throw new Error('התקבלה תשובה לא תקינה מהשרת: ' + JSON.stringify(json));
-                allPosts = json;
+                allPosts = mergeServerData(json);
 
                 const created = await ensureDefaultCategories();
                 if (created) {
                     const res2 = await fetch(API_URL);
                     const json2 = await res2.json();
-                    if (Array.isArray(json2)) allPosts = json2;
+                    if (Array.isArray(json2)) allPosts = mergeServerData(json2);
                 }
 
                 try { localStorage.setItem(CACHE_KEY, JSON.stringify(allPosts)); } catch (e) {}
@@ -3848,12 +4078,68 @@
             }
             const post = allPosts.find(p => p.id === postId);
             if (!post) return;
-            replyingToQuote = { id: post.id, author: post.author_name, snippet: truncate(post.content, 150) };
+            // מצטטים את ההודעה המלאה (לא רק קטע ממנה) - הצגה מקוצרת היא רק בתצוגה המקדימה
+            replyingToQuote = { id: post.id, author: post.author_name, snippet: post.content };
             document.getElementById('reply-quote-preview').style.display = 'flex';
-            document.getElementById('reply-quote-text').innerText = `בתגובה ל-@${post.author_name}: ${replyingToQuote.snippet}`;
+            document.getElementById('reply-quote-text').innerText = `בתגובה ל-@${post.author_name}: ${truncate(replyingToQuote.snippet, 150)}`;
             document.getElementById('reply-input').focus();
             document.querySelector('.reply-box').scrollIntoView({ behavior: 'smooth', block: 'end' });
         }
+
+        // מציג תיבת ציטוט עבור טקסט שנבחר (מסומן) בתוך הודעה מסוימת, ולא ההודעה כולה
+        function quoteSelectedText(postId, text) {
+            if (!currentUser) {
+                showToast('יש להתחבר כדי להגיב', 'error');
+                return;
+            }
+            const post = allPosts.find(p => p.id === postId);
+            if (!post) return;
+            replyingToQuote = { id: post.id, author: post.author_name, snippet: text };
+            document.getElementById('reply-quote-preview').style.display = 'flex';
+            document.getElementById('reply-quote-text').innerText = `בתגובה ל-@${post.author_name}: ${truncate(text, 150)}`;
+            const btn = document.getElementById('selection-quote-btn');
+            if (btn) btn.style.display = 'none';
+            const sel = window.getSelection();
+            if (sel) sel.removeAllRanges();
+            document.getElementById('reply-input').focus();
+            document.querySelector('.reply-box').scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+
+        // מזהה בחירת טקסט בתוך גוף הודעה ומציג כפתור "צטט" צף לידה
+        function handleTextSelectionForQuote(e) {
+            if (e.target.closest && e.target.closest('#selection-quote-btn')) return;
+            setTimeout(() => {
+                const btn = document.getElementById('selection-quote-btn');
+                if (!btn) return;
+                const sel = window.getSelection();
+                const text = sel && sel.toString().trim();
+                if (!text || text.length < 2 || !sel.rangeCount) {
+                    btn.style.display = 'none';
+                    return;
+                }
+                const anchorNode = sel.anchorNode;
+                const anchorEl = anchorNode ? (anchorNode.nodeType === 1 ? anchorNode : anchorNode.parentElement) : null;
+                const postContentEl = anchorEl ? anchorEl.closest('.post-content') : null;
+                if (!postContentEl) { btn.style.display = 'none'; return; }
+                const postCard = postContentEl.closest('.post-card');
+                const postId = postCard ? postCard.id.replace('post-card-', '') : null;
+                if (!postId) { btn.style.display = 'none'; return; }
+
+                const rect = sel.getRangeAt(0).getBoundingClientRect();
+                if (!rect || (rect.width === 0 && rect.height === 0)) { btn.style.display = 'none'; return; }
+                btn.style.display = 'flex';
+                btn.style.top = Math.max(10, rect.top - 8) + 'px';
+                btn.style.left = (rect.left + rect.width / 2) + 'px';
+                btn.onclick = () => quoteSelectedText(postId, text);
+            }, 5);
+        }
+
+        document.addEventListener('mouseup', handleTextSelectionForQuote);
+        document.addEventListener('touchend', handleTextSelectionForQuote);
+        document.addEventListener('scroll', () => {
+            const btn = document.getElementById('selection-quote-btn');
+            if (btn) btn.style.display = 'none';
+        }, true);
 
         function cancelQuote() {
             replyingToQuote = null;
@@ -4710,7 +4996,7 @@
                 if (!res.ok) return;
                 const json = await res.json();
                 if (!Array.isArray(json)) return; // תשובה לא תקינה - משאירים את הנתונים הקודמים
-                allPosts = json;
+                allPosts = mergeServerData(json);
                 try { localStorage.setItem(CACHE_KEY, JSON.stringify(allPosts)); } catch (e) {}
             } catch (e) {
                 return;
