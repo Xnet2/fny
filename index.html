@@ -2692,7 +2692,10 @@
         }
 
         function getLink(type, id) {
-            return location.origin + location.pathname + '#' + type + '/' + id;
+            const base = location.origin + BASE_PATH.replace(/\/$/, '');
+            if (type === 'topic') return base + '/topic/' + (topicNumberById(id) || id);
+            if (type === 'post') return base + '/post/' + (postNumberById(id) || id);
+            return base + '/' + type + '/' + encodeURIComponent(id);
         }
 
         async function copyLink(type, id) {
