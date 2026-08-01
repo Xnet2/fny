@@ -2320,6 +2320,19 @@
             return getAllPostIdsSorted()[idx] || null;
         }
 
+        // קטגוריות ממוספרות לפי אותו סדר כרונולוגי ש-getCategories() כבר משתמש בו
+        function categoryNumberById(categoryId) {
+            const idx = getCategories().findIndex(c => c.topic_id === categoryId);
+            return idx === -1 ? '' : idx + 1;
+        }
+
+        function categoryIdByNumber(num) {
+            const idx = parseInt(num, 10) - 1;
+            if (isNaN(idx) || idx < 0) return null;
+            const cats = getCategories();
+            return cats[idx] ? cats[idx].topic_id : null;
+        }
+
         // מנווטים לנתיב יפה חדש (בלי רענון עמוד). path מתחיל תמיד ב-'/', למשל '/topic/12'
         function navigate(path) {
             const full = BASE_PATH.replace(/\/$/, '') + path;
@@ -2350,7 +2363,8 @@
                 const topicId = /^\d+$/.test(id) ? (topicIdByNumber(id) || id) : id;
                 openThread(topicId, true);
             } else if (type === 'category' && id) {
-                openCategory(id, true);
+                const categoryId = /^\d+$/.test(id) ? (categoryIdByNumber(id) || id) : id;
+                openCategory(categoryId, true);
             } else if (type === 'post' && id) {
                 const postId = /^\d+$/.test(id) ? (postIdByNumber(id) || id) : id;
                 openThreadByPostId(postId);
@@ -2695,6 +2709,7 @@
             const base = location.origin + BASE_PATH.replace(/\/$/, '');
             if (type === 'topic') return base + '/topic/' + (topicNumberById(id) || id);
             if (type === 'post') return base + '/post/' + (postNumberById(id) || id);
+            if (type === 'category') return base + '/category/' + (categoryNumberById(id) || id);
             return base + '/' + type + '/' + encodeURIComponent(id);
         }
 
@@ -3739,7 +3754,7 @@
             setActiveNav(null);
             closeSidebarPanel();
 
-            if (!fromHash) navigate('/category/' + encodeURIComponent(categoryId));
+            if (!fromHash) navigate('/category/' + (categoryNumberById(categoryId) || encodeURIComponent(categoryId)));
 
             document.getElementById('category-header').innerHTML = `
                 <div class="thread-header-top">
@@ -3749,6 +3764,9 @@
                         </div>
                         <h2>${escapeHtml(cat.title)}</h2>
                         ${cat.content ? `<p style="color:var(--text-muted); font-size:13px; margin-top:6px;">${escapeHtml(cat.content)}</p>` : ''}
+                    </div>
+                    <div>
+                        <button class="icon-btn" title="העתק קישור לקטגוריה" onclick="copyLink('category', '${cat.topic_id}')"><i class="fa-solid fa-link"></i></button>
                     </div>
                 </div>
             `;
