@@ -2338,6 +2338,7 @@
         let notifications = [];
         let notifPollTimer = null;
         let locallyReadNotifIds = new Set(); // מזהי התראות שסומנו כנקראו מקומית, כדי שפולינג לא ידרוס אותן חזרה ל"לא נקרא"
+        let locallySeenNotifIds = new Set(); // מזהי התראות שסומנו כ"נצפו" מקומית (נקראה ההודעה עצמה), מאותה סיבה
         let pendingGoogleProfile = null; // פרופיל גוגל שממתין להשלמת הרשמה
 
         /* ============ עזר: משתמשים ============ */
@@ -3144,16 +3145,24 @@
 
         /* ============ התראות (Notifications) ============ */
 
+        // התראה נחשבת "לא נקראה" רק אם גם לא סומנה כנקראה במפורש (is_read)
+        // וגם ההודעה שהיא מתריעה עליה לא נצפתה בפועל (seen_v) - כך שאם המשתמש פשוט פתח
+        // את הנושא בלי ללחוץ על הפעמון, ההתראה עדיין תיחשב "נקראה".
+        function isNotifUnread(n) {
+            return String(n.is_read) !== 'TRUE' && String(n.seen_v) !== 'V';
+        }
+
         async function loadNotifications() {
             if (!currentUser) return;
             try {
                 const res = await fetch(`${USERS_API_URL}?action=getNotifications&email=${encodeURIComponent(currentUser.email)}`);
                 const list = await res.json();
                 const fresh = Array.isArray(list) ? list : [];
-                // אם התראה כבר סומנה כנקראה מקומית, אל תיתן לתשובת שרת "ישנה" (שעדיין לא השתקפה בגיליון)
+                // אם התראה כבר סומנה כנקראה/נצפתה מקומית, אל תיתן לתשובת שרת "ישנה" (שעדיין לא השתקפה בגיליון)
                 // להחזיר אותה למצב לא-נקרא. זה מונע את התופעה של התראה שחוזרת להתריע אחרי שסומנה כנקראה.
                 fresh.forEach(n => {
                     if (locallyReadNotifIds.has(String(n.id))) n.is_read = 'TRUE';
+                    if (locallySeenNotifIds.has(String(n.id))) n.seen_v = 'V';
                 });
                 notifications = fresh;
                 renderNotifBell();
@@ -3176,7 +3185,7 @@
         }
 
         function renderNotifBell() {
-            const unreadCount = notifications.filter(n => String(n.is_read) !== 'TRUE').length;
+            const unreadCount = notifications.filter(isNotifUnread).length;
             const badge = document.getElementById('notif-badge');
             if (!badge) return;
             if (unreadCount > 0) {
@@ -3195,7 +3204,7 @@
                 return;
             }
             list.innerHTML = notifications.map(n => {
-                const unread = String(n.is_read) !== 'TRUE';
+                const unread = isNotifUnread(n);
                 return `
                     <div class="notif-item ${unread ? 'unread' : ''}" onclick="openNotification('${n.id}')">
                         ${unread ? '<div class="notif-item-dot"></div>' : '<div style="width:8px;flex-shrink:0;"></div>'}
@@ -3254,7 +3263,7 @@
         function openNotification(id) {
             const n = notifications.find(x => String(x.id) === String(id));
             if (!n) return;
-            if (String(n.is_read) !== 'TRUE') {
+            if (isNotifUnread(n)) {
                 n.is_read = 'TRUE';
                 renderNotifBell();
                 renderNotifDropdown();
@@ -3266,6 +3275,29 @@
             } else if (n.topic_id) {
                 location.hash = '#topic/' + n.topic_id;
             }
+        }
+
+        // מסמן כ"נצפו" (V בעמודת seen_v בגיליון) את כל ההתראות של המשתמש הנוכחי ששייכות
+        // לנושא הזה - נקרא בכל פעם שנפתח נושא, כדי שגם צפייה ישירה בהודעה (בלי ללחוץ על הפעמון)
+        // תסמן את ההתראה כנקראה ולא תישאר "תקועה" כלא-נקראת.
+        async function markTopicNotificationsSeen(topicId) {
+            if (!currentUser || !topicId) return;
+            let changed = false;
+            notifications.forEach(n => {
+                if (String(n.topic_id) === String(topicId) && isNotifUnread(n)) {
+                    n.seen_v = 'V';
+                    locallySeenNotifIds.add(String(n.id));
+                    changed = true;
+                }
+            });
+            if (changed) { renderNotifBell(); renderNotifDropdown(); }
+            try {
+                await fetch(USERS_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'markSeen', data: { user_email: currentUser.email, topic_id: topicId } })
+                });
+            } catch (e) {}
         }
 
         // שולח התראות לכל העוקבים אחרי נושא מסוים (חוץ מהכותב עצמו)
@@ -3748,6 +3780,7 @@
             renderThreadHeader(posts[0], topicId);
             renderPosts(posts);
             cancelQuote();
+            markTopicNotificationsSeen(topicId);
         }
 
         function openThreadByPostId(postId) {
