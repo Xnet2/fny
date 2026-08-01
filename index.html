@@ -1129,6 +1129,12 @@
         .post-index {
             font-size: 12px;
             color: var(--text-muted);
+            text-decoration: none;
+        }
+
+        .post-index:hover {
+            color: var(--primary);
+            text-decoration: underline;
         }
 
         .post-body {
@@ -4216,7 +4222,7 @@
                                 </div>
                             </div>
                         </div>
-                        <span class="post-index">#${index + 1}</span>
+                        <a href="${getLink('post', post.id)}" class="post-index" title="קישור להודעה זו" onclick="if(event.ctrlKey||event.metaKey||event.shiftKey||event.button!==0) return; event.preventDefault(); openThreadByPostId('${post.id}');">#${index + 1}</a>
                     </div>
                     <div class="post-body">
                         ${quoteHtml}
