@@ -2647,7 +2647,7 @@
             if (!str) return '';
             let s = escapeHtml(str);
             // תיוגי משתמשים בפורמט @[שם](uid) הופכים לקישור לפרופיל, לפני עיבוד קישורים רגילים
-            s = s.replace(/@\[([^\]]+)\]\(([^()\s]+)\)/g, '<a href="#user/$2" class="mention-link" onclick="event.stopPropagation();">@$1</a>');
+            s = s.replace(/@\[([^\]]+)\]\(([^()\s]+)\)/g, '<a href="' + BASE_PATH.replace(/\/$/, '') + '/user/$2" class="mention-link" onclick="event.stopPropagation(); if(event.ctrlKey||event.metaKey||event.shiftKey||event.button!==0) return; event.preventDefault(); openUserProfile(\'$2\');">@$1</a>');
             s = s.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" onclick="window.open(this.src,\'_blank\')">');
             s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:var(--primary);">$1</a>');
             s = s.replace(/\*\*([^\*\n]+)\*\*/g, '<strong>$1</strong>');
@@ -5315,6 +5315,9 @@
             attachImagePasteSupport('new-topic-content');
             attachImagePasteSupport('reply-input');
             attachImagePasteSupport('edit-content');
+            attachMentionSupport('new-topic-content');
+            attachMentionSupport('reply-input');
+            attachMentionSupport('edit-content');
             fetchPosts();
             startAutoRefresh();
         };
