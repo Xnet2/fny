@@ -4615,6 +4615,7 @@
                 if (currentUser) {
                     autoFollowTopic(newTopicId);
                     notifyUserFollowers(currentUser.email, `${currentUser.name} פתח/ה נושא חדש: "${title}"`, 'new_topic', newTopicId);
+                    notifyMentionedUsers(content, `${currentUser.name} תייג/ה אותך בנושא "${title}"`, newTopicId, newPost.id);
                 }
             } catch (err) {
                 // כשל בשמירה בשרת - מסירים את הנושא האופטימי וחוזרים לדף הבית
@@ -4736,6 +4737,7 @@
                 const mainPost = allPosts.find(p => p.topic_id === topicIdAtSend && p.title);
                 autoFollowTopic(topicIdAtSend);
                 notifyTopicFollowers(topicIdAtSend, `${currentUser.name} הגיב/ה בנושא "${mainPost ? mainPost.title : ''}"`, 'reply', replyPost.id);
+                notifyMentionedUsers(replyPost.content, `${currentUser.name} תייג/ה אותך בנושא "${mainPost ? mainPost.title : ''}"`, topicIdAtSend, replyPost.id);
             } catch (err) {
                 // כשל בשמירה בשרת - מסירים את התגובה האופטימית
                 allPosts = allPosts.filter(p => p.id !== replyPost.id);
