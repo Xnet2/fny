@@ -2669,14 +2669,14 @@
         }
 
         // מסיר סימוני מרקדאון בסיסיים כדי להציג תצוגה מקדימה נקייה של תגובה
-        function stripMarkdownForPreview(str) {
+        function stripMarkdownForPreview(str, maxLen) {
             if (!str) return '';
             let s = String(str);
             s = s.replace(/!\[[^\]]*\]\([^)]+\)/g, '');
             s = s.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
             s = s.replace(/[*_~`#>]/g, '');
             s = s.replace(/\s+/g, ' ').trim();
-            return truncate(s, 90);
+            return truncate(s, maxLen || 90);
         }
 
         // ממיר את מחרוזת התאריך שנשמרת (toLocaleString('he-IL')) לאובייקט Date, בלי להסתמך על פענוח תאריכים אוטומטי של הדפדפן
@@ -4202,7 +4202,7 @@
                 const quoteHtml = post.quote_content ? `
                     <div class="post-quote">
                         <strong onclick="scrollToPost('${post.quote_id || ''}')">@${escapeHtml(post.quote_author || '')} כתב:</strong>
-                        <div class="post-quote-text">${escapeHtml(truncate(post.quote_content, 200))}</div>
+                        <div class="post-quote-text">${escapeHtml(stripMarkdownForPreview(post.quote_content, 200))}</div>
                     </div>
                 ` : '';
 
@@ -4230,11 +4230,11 @@
                     </div>
                     <div class="post-footer">
                         ${!deleted ? `
-                        <button class="vote-btn ${vote === 'dislike' ? 'voted-dislike' : ''}" onclick="votePost('${post.id}','dislike')" title="לא אהבתי">
-                            <i class="fa-regular fa-thumbs-down"></i> <span id="dislike-count-${post.id}">${num(post.dislikes)}</span>
-                        </button>
                         <button class="vote-btn ${vote === 'like' ? 'voted-like' : ''}" onclick="votePost('${post.id}','like')" title="אהבתי">
                             <i class="fa-regular fa-thumbs-up"></i> <span id="like-count-${post.id}">${num(post.likes)}</span>
+                        </button>
+                        <button class="vote-btn ${vote === 'dislike' ? 'voted-dislike' : ''}" onclick="votePost('${post.id}','dislike')" title="לא אהבתי">
+                            <i class="fa-regular fa-thumbs-down"></i> <span id="dislike-count-${post.id}">${num(post.dislikes)}</span>
                         </button>
                         <button class="vote-btn" onclick="startQuoteReply('${post.id}')" title="ציטוט ותגובה">
                             <i class="fa-solid fa-reply"></i> תגובה
@@ -4357,7 +4357,7 @@
             // מצטטים את ההודעה המלאה (לא רק קטע ממנה) - הצגה מקוצרת היא רק בתצוגה המקדימה
             replyingToQuote = { id: post.id, author: post.author_name, snippet: post.content };
             document.getElementById('reply-quote-preview').style.display = 'flex';
-            document.getElementById('reply-quote-text').innerText = `בתגובה ל-@${post.author_name}: ${truncate(replyingToQuote.snippet, 150)}`;
+            document.getElementById('reply-quote-text').innerText = `בתגובה ל-@${post.author_name}: ${stripMarkdownForPreview(replyingToQuote.snippet, 150)}`;
             document.getElementById('reply-input').focus();
             document.querySelector('.reply-box').scrollIntoView({ behavior: 'smooth', block: 'end' });
         }
