@@ -5,6 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>פורום נווה יעקב</title>
 
+    <!--
+        טריק הניתוב ל-GitHub Pages (Single Page Apps for GitHub Pages, rafgraph):
+        כתובת עמוקה כמו /fny/topic/12 לא קיימת כקובץ אמיתי, אז GitHub Pages מגיש את 404.html,
+        וזה מפנה לכאן עם הנתיב המקורי מקודד בפרמטר query. הסקריפט הבא "מפענח" את זה בחזרה
+        לנתיב היפה המקורי (בלי רענון עמוד), עוד לפני שהאפליקציה מתחילה לרוץ ולנתב.
+    -->
+    <script>
+        (function (l) {
+            if (l.search[1] === '/') {
+                var decoded = l.search.slice(1).split('&').map(function (s) {
+                    return s.replace(/~and~/g, '&');
+                }).join('?');
+                window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash);
+            }
+        }(window.location));
+    </script>
+
     <!-- פאביקון: בועת צ'אט בצבע הראשי של האתר, מוטבע כ-SVG כדי לא לדרוש קובץ נפרד -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230284c7'/%3E%3Crect x='14' y='16' width='36' height='26' rx='8' fill='%23ffffff'/%3E%3Cpath d='M22 42 L22 50 L30 42 Z' fill='%23ffffff'/%3E%3C/svg%3E">
 
@@ -1850,10 +1867,10 @@
         <a href="#" class="sidebar-icon active" id="nav-home" onclick="showHome(); return false;" title="דף הבית"><i class="fa-solid fa-house"></i></a>
         <a href="#" class="sidebar-icon" onclick="openNewTopicModal(); return false;" title="נושא חדש"><i class="fa-solid fa-pen-to-square"></i></a>
         <div class="sidebar-divider"></div>
-        <a href="#" class="sidebar-icon" id="nav-latest" onclick="location.hash = '#latest'; return false;" title="נושאים אחרונים"><i class="fa-solid fa-clock"></i></a>
-        <a href="#" class="sidebar-icon" id="nav-popular" onclick="location.hash = '#popular'; return false;" title="נושאים פופולריים"><i class="fa-solid fa-fire"></i></a>
-        <a href="#" class="sidebar-icon" id="nav-users" onclick="location.hash = '#users'; return false;" title="משתמשים"><i class="fa-solid fa-users"></i></a>
-        <a href="#" class="sidebar-icon" id="nav-tags" onclick="location.hash = '#tags'; return false;" title="תגיות"><i class="fa-solid fa-tag"></i></a>
+        <a href="#" class="sidebar-icon" id="nav-latest" onclick="openLatestView(); return false;" title="נושאים אחרונים"><i class="fa-solid fa-clock"></i></a>
+        <a href="#" class="sidebar-icon" id="nav-popular" onclick="openPopularView(); return false;" title="נושאים פופולריים"><i class="fa-solid fa-fire"></i></a>
+        <a href="#" class="sidebar-icon" id="nav-users" onclick="openUsersView(); return false;" title="משתמשים"><i class="fa-solid fa-users"></i></a>
+        <a href="#" class="sidebar-icon" id="nav-tags" onclick="openTagsView(); return false;" title="תגיות"><i class="fa-solid fa-tag"></i></a>
     </div>
 
     <!-- סרגל צר בקצה השני - פרופיל, חיפוש, התראות -->
@@ -2071,7 +2088,7 @@
 
             <!-- תצוגת נושאים לפי תגית -->
             <div id="tag-view" class="thread-view">
-                <button class="btn-secondary" onclick="location.hash = '#tags'" style="margin-bottom: 15px;">
+                <button class="btn-secondary" onclick="openTagsView()" style="margin-bottom: 15px;">
                     <i class="fa-solid fa-arrow-right"></i> חזרה לתגיות
                 </button>
                 <div class="thread-header">
@@ -2244,6 +2261,118 @@
         const CATEGORY_PREFIX = 'cat_';
         const DEFAULT_ICON = 'fa-comments';
         const CACHE_KEY = 'forum_data_cache_v1';
+
+        /* ============ ניתוב לפי נתיב (path) - קישורים יפים ============ */
+
+        // סוגי הנתיבים שהאתר מכיר - משמש גם לזיהוי איפה מסתיימת "תיקיית הבסיס" של האתר בכתובת
+        const ROUTE_TYPES = ['topic', 'post', 'category', 'user', 'tag', 'tags', 'users', 'latest', 'popular'];
+
+        // מחשבים פעם אחת בטעינה את "תיקיית הבסיס" של האתר (למשל /fny/), כדי שהניתוב יעבוד
+        // גם ב-GitHub Pages (תחת /fny/) וגם בהרצה מקומית מנתיב אחר
+        function computeBasePath() {
+            let parts = location.pathname.split('/').filter(Boolean);
+            if (parts.length && /\.html?$/i.test(parts[parts.length - 1])) parts.pop();
+            let idx = parts.findIndex(p => ROUTE_TYPES.includes(p));
+            if (idx === -1) idx = parts.length;
+            const baseParts = parts.slice(0, idx);
+            return baseParts.length ? '/' + baseParts.join('/') + '/' : '/';
+        }
+        const BASE_PATH = computeBasePath();
+
+        // מזהי כל הנושאים האמיתיים (לא קטגוריות), ממוינים כרונולוגית - topic_<חותמת-זמן> ולכן
+        // מיון לקסיקוגרפי = מיון כרונולוגי. משמש למספור רציף בקישורים (topic/1, topic/2...)
+        // שיהיה זהה לכל המשתמשים בלי תלות בשרת
+        function getAllTopicIdsSorted() {
+            const ids = new Set();
+            allPosts.forEach(p => {
+                if (p.title && p.topic_id && p.topic_id.indexOf(CATEGORY_PREFIX) !== 0) ids.add(p.topic_id);
+            });
+            return Array.from(ids).sort();
+        }
+
+        function getAllPostIdsSorted() {
+            const ids = new Set();
+            allPosts.forEach(p => {
+                if (p.id && p.topic_id && p.topic_id.indexOf(CATEGORY_PREFIX) !== 0) ids.add(p.id);
+            });
+            return Array.from(ids).sort();
+        }
+
+        function topicNumberById(topicId) {
+            const idx = getAllTopicIdsSorted().indexOf(topicId);
+            return idx === -1 ? '' : idx + 1;
+        }
+
+        function topicIdByNumber(num) {
+            const idx = parseInt(num, 10) - 1;
+            if (isNaN(idx) || idx < 0) return null;
+            return getAllTopicIdsSorted()[idx] || null;
+        }
+
+        function postNumberById(postId) {
+            const idx = getAllPostIdsSorted().indexOf(postId);
+            return idx === -1 ? '' : idx + 1;
+        }
+
+        function postIdByNumber(num) {
+            const idx = parseInt(num, 10) - 1;
+            if (isNaN(idx) || idx < 0) return null;
+            return getAllPostIdsSorted()[idx] || null;
+        }
+
+        // מנווטים לנתיב יפה חדש (בלי רענון עמוד). path מתחיל תמיד ב-'/', למשל '/topic/12'
+        function navigate(path) {
+            const full = BASE_PATH.replace(/\/$/, '') + path;
+            if (full !== location.pathname) history.pushState(null, '', full);
+        }
+
+        function parseRoute() {
+            let path = location.pathname;
+            if (path.indexOf(BASE_PATH) === 0) path = path.slice(BASE_PATH.length);
+            else path = path.replace(/^\//, '');
+            path = path.replace(/\/$/, '').replace(/^index\.html$/i, '');
+
+            // תמיכה לאחור בקישורי hash ישנים (#topic/topic_123...) - ממירים לנתיב היפה החדש
+            if (!path && location.hash && location.hash.length > 1) {
+                const legacy = location.hash.slice(1);
+                const [ltype, lid] = legacy.split('/');
+                if (ltype && lid && ROUTE_TYPES.includes(ltype)) {
+                    path = ltype + '/' + lid;
+                    history.replaceState(null, '', BASE_PATH.replace(/\/$/, '') + '/' + path);
+                }
+            }
+
+            if (!path) { showHome(); return; }
+            const [type, idRaw] = path.split('/');
+            const id = idRaw ? decodeURIComponent(idRaw) : idRaw;
+
+            if (type === 'topic' && id) {
+                const topicId = /^\d+$/.test(id) ? (topicIdByNumber(id) || id) : id;
+                openThread(topicId, true);
+            } else if (type === 'category' && id) {
+                openCategory(id, true);
+            } else if (type === 'post' && id) {
+                const postId = /^\d+$/.test(id) ? (postIdByNumber(id) || id) : id;
+                openThreadByPostId(postId);
+            } else if (type === 'user' && id) {
+                openUserProfile(id);
+            } else if (type === 'latest') {
+                openLatestView(true);
+            } else if (type === 'popular') {
+                openPopularView(true);
+            } else if (type === 'users') {
+                openUsersView(true);
+            } else if (type === 'tags') {
+                openTagsView(true);
+            } else if (type === 'tag' && id) {
+                openTagView(decodeURIComponent(id), true);
+            } else {
+                showHome();
+            }
+        }
+
+        window.addEventListener('popstate', parseRoute);
+
 
         // הגדרות Cloudinary להעלאת תמונות (unsigned upload preset)
         const CLOUDINARY_CLOUD_NAME = 'dpsgd6esr';
@@ -2430,7 +2559,7 @@
             if (tags.length === 0) return '';
             return tags.map(t => {
                 const c = tagColor(t);
-                return `<span class="tag-chip" style="background:${c.bg};color:${c.color};cursor:pointer;" onclick="event.stopPropagation(); location.hash='#tag/' + encodeURIComponent('${t.replace(/'/g, "\\'")}')">${escapeHtml(t)}</span>`;
+                return `<span class="tag-chip" style="background:${c.bg};color:${c.color};cursor:pointer;" onclick="event.stopPropagation(); openTagView('${t.replace(/'/g, "\\'")}')">${escapeHtml(t)}</span>`;
             }).join('');
         }
 
@@ -2973,7 +3102,7 @@
         function goToMyProfile() {
             if (!currentUser) return;
             closeProfileMenu();
-            location.hash = '#user/' + userIdFromEmail(currentUser.email);
+            openUserProfile(userIdFromEmail(currentUser.email));
         }
 
         /* ============ הרשמה מחייבת (כתובת + התחייבות נווה יעקב) ============ */
@@ -3298,9 +3427,9 @@
             }
             document.getElementById('notif-dropdown').classList.remove('open');
             if (n.post_id) {
-                location.hash = '#post/' + n.post_id;
+                openThreadByPostId(n.post_id);
             } else if (n.topic_id) {
-                location.hash = '#topic/' + n.topic_id;
+                openThread(n.topic_id);
             }
         }
 
@@ -3406,7 +3535,7 @@
                         allPosts = parsed;
                         usedCache = true;
                         renderCategoriesGrid();
-                        parseHash();
+                        parseRoute();
                     }
                 }
             } catch (e) {}
@@ -3430,7 +3559,7 @@
                     refreshCurrentViewInPlace();
                 } else {
                     renderCategoriesGrid();
-                    parseHash();
+                    parseRoute();
                 }
             } catch (err) {
                 console.error("שגיאה בטעינת נתונים:", err);
@@ -3557,7 +3686,7 @@
 
                 const card = document.createElement('div');
                 card.className = 'category-card';
-                card.onclick = () => { location.hash = '#category/' + cat.topic_id; };
+                card.onclick = () => { openCategory(cat.topic_id); };
 
                 const adminControls = (currentUser && currentUser.isAdmin) ? `
                     <div class="category-admin-controls">
@@ -3607,7 +3736,7 @@
             setActiveNav(null);
             closeSidebarPanel();
 
-            if (!fromHash) location.hash = '#category/' + categoryId;
+            if (!fromHash) navigate('/category/' + encodeURIComponent(categoryId));
 
             document.getElementById('category-header').innerHTML = `
                 <div class="thread-header-top">
@@ -3762,7 +3891,7 @@
 
                 const card = document.createElement('div');
                 card.className = 'topic-card';
-                card.onclick = () => { location.hash = '#topic/' + topicId; };
+                card.onclick = () => { openThread(topicId); };
 
                 card.innerHTML = `
                     <div class="topic-info">
@@ -3802,7 +3931,10 @@
             currentTopicId = null;
             currentCategoryId = null;
             setActiveNav('nav-home');
-            if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+            const root = BASE_PATH.replace(/\/$/, '') || '/';
+            if (location.pathname !== root || location.hash) {
+                history.replaceState(null, '', root);
+            }
         }
 
         function setActiveNav(id) {
@@ -3826,7 +3958,7 @@
             setActiveNav(null);
             closeSidebarPanel();
 
-            if (!fromHash) location.hash = '#topic/' + topicId;
+            if (!fromHash) navigate('/topic/' + topicNumberById(topicId));
 
             registerView(posts[0]);
             renderThreadHeader(posts[0], topicId);
@@ -3842,6 +3974,7 @@
                 showHome();
                 return;
             }
+            navigate('/post/' + (postNumberById(postId) || postId));
             openThread(post.topic_id, true);
             setTimeout(() => {
                 const el = document.getElementById('post-card-' + postId);
@@ -4049,9 +4182,9 @@
                 postDiv.innerHTML = `
                     <div class="post-header">
                         <div class="post-user">
-                            ${avatarHtml(post.author_name, post.author_email, post.author_avatar, 38, `style="cursor:pointer;" onclick="location.hash='#user/${uid}'"`)}
+                            ${avatarHtml(post.author_name, post.author_email, post.author_avatar, 38, `style="cursor:pointer;" onclick="openUserProfile('${uid}')"`)}
                             <div>
-                                <strong class="post-author-name" onclick="location.hash='#user/${uid}'">${escapeHtml(post.author_name)}</strong>
+                                <strong class="post-author-name" onclick="openUserProfile('${uid}')">${escapeHtml(post.author_name)}</strong>
                                 ${post.author_email === ADMIN_EMAIL ? '<span class="badge-admin">מנהל</span>' : ''}
                                 ${isOp ? '<span class="post-op-badge">פתח/ה את הנושא</span>' : ''}
                                 <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
@@ -4399,7 +4532,7 @@
             // עדכון אופטימי מיידי: מוסיפים את הנושא לרשימה המקומית ומנווטים אליו מיד,
             // בלי לחכות לתשובת השרת
             allPosts.push(newPost);
-            location.hash = '#topic/' + newTopicId;
+            openThread(newTopicId);
             showToast('הנושא פורסם', 'success');
 
             try {
@@ -4661,7 +4794,7 @@
                     users.forEach(u => {
                         const item = document.createElement('div');
                         item.className = 'panel-item';
-                        item.onclick = () => { location.hash = '#user/' + u.uid; };
+                        item.onclick = () => { openUserProfile(u.uid); };
                         item.innerHTML = `${avatarHtml(u.name, u.email, u.avatar, 34)}<div><div class="panel-item-title">${escapeHtml(u.name)}</div><div class="panel-item-sub">${u.count} הודעות</div></div>`;
                         content.appendChild(item);
                     });
@@ -4714,7 +4847,7 @@
             matches.forEach(topic => {
                 const item = document.createElement('div');
                 item.className = 'panel-item';
-                item.onclick = () => { closeSearchModal(); location.hash = '#topic/' + topic.topic_id; };
+                item.onclick = () => { closeSearchModal(); openThread(topic.topic_id); };
                 item.innerHTML = `<div><div class="panel-item-title">${escapeHtml(topic.title)}</div><div class="panel-item-sub">${escapeHtml(getCategoryName(topic.category))}</div></div>`;
                 results.appendChild(item);
             });
@@ -4736,7 +4869,7 @@
             document.getElementById('users-view').style.display = 'block';
             setActiveNav('nav-users');
             closeSidebarPanel();
-            if (!fromHash) location.hash = '#users';
+            if (!fromHash) navigate('/users');
             renderUsersGrid();
         }
 
@@ -4769,7 +4902,7 @@
             users.forEach(u => {
                 const card = document.createElement('div');
                 card.className = 'user-card';
-                card.onclick = () => { location.hash = '#user/' + u.uid; };
+                card.onclick = () => { openUserProfile(u.uid); };
                 const adminEdit = (currentUser && currentUser.isAdmin) ? `
                     <button class="icon-btn user-card-edit" title="עריכת שם ופרופיל" onclick="event.stopPropagation(); openEditUserModal('${u.uid}')">
                         <i class="fa-solid fa-pen"></i>
@@ -4846,7 +4979,7 @@
             document.getElementById('tags-view').style.display = 'block';
             setActiveNav('nav-tags');
             closeSidebarPanel();
-            if (!fromHash) location.hash = '#tags';
+            if (!fromHash) navigate('/tags');
             renderTagsGrid();
         }
 
@@ -4863,7 +4996,7 @@
                 const c = tagColor(t.tag);
                 const card = document.createElement('div');
                 card.className = 'tag-card';
-                card.onclick = () => { location.hash = '#tag/' + encodeURIComponent(t.tag); };
+                card.onclick = () => { openTagView(t.tag); };
                 card.innerHTML = `
                     <span class="tag-chip" style="background:${c.bg};color:${c.color};font-size:13px;">${escapeHtml(t.tag)}</span>
                     <span class="tag-card-count">${t.count} נושאים</span>
@@ -4877,7 +5010,7 @@
             document.getElementById('tag-view').style.display = 'block';
             setActiveNav('nav-tags');
             closeSidebarPanel();
-            if (!fromHash) location.hash = '#tag/' + encodeURIComponent(tagName);
+            if (!fromHash) navigate('/tag/' + encodeURIComponent(tagName));
 
             document.getElementById('tag-view-title').innerText = tagName;
             currentTagFilter = tagName;
@@ -4917,7 +5050,7 @@
 
                 const card = document.createElement('div');
                 card.className = 'topic-card';
-                card.onclick = () => { location.hash = '#topic/' + topicId; };
+                card.onclick = () => { openThread(topicId); };
                 card.innerHTML = `
                     <div class="topic-info">
                         ${avatarHtml(mainPost.author_name, mainPost.author_email, mainPost.author_avatar, 44, 'class="topic-author-img"')}
@@ -4966,7 +5099,7 @@
             hideAllViews();
             document.getElementById('latest-view').style.display = 'block';
             setActiveNav('nav-latest');
-            if (!fromHash) location.hash = '#latest';
+            if (!fromHash) navigate('/latest');
 
             const topicsMap = getTopicsMap();
             renderTopicsListInto('latest-topics-container', getLatestTopicIds(topicsMap), topicsMap, { emptyText: 'אין עדיין נושאים' });
@@ -4977,7 +5110,7 @@
             hideAllViews();
             document.getElementById('popular-view').style.display = 'block';
             setActiveNav('nav-popular');
-            if (!fromHash) location.hash = '#popular';
+            if (!fromHash) navigate('/popular');
 
             const topicsMap = getTopicsMap();
             renderTopicsListInto('popular-topics-container', getPopularTopicIds(topicsMap), topicsMap, { emptyText: 'אין עדיין נושאים' });
@@ -4997,6 +5130,7 @@
             document.getElementById('profile-view').style.display = 'block';
             setActiveNav(null);
             closeSidebarPanel();
+            navigate('/user/' + encodeURIComponent(uid));
 
             const userPosts = allPosts
                 .filter(p => p.author_email === user.email)
@@ -5038,7 +5172,7 @@
                 if (isPostDeleted(mainPost) && !canSeeDeletedPost(mainPost)) return; // הנושא נמחק ומוסתר מהצופה הנוכחי
                 const card = document.createElement('div');
                 card.className = 'topic-card';
-                card.onclick = () => { location.hash = '#post/' + p.id; };
+                card.onclick = () => { openThreadByPostId(p.id); };
                 card.innerHTML = `
                     <div class="topic-info">
                         ${avatarHtml(user.name, user.email, user.avatar, 44, 'class="topic-author-img"')}
@@ -5054,37 +5188,6 @@
                 listEl.appendChild(card);
             });
         }
-
-        /* ============ ניתוב לפי כתובת (hash) ============ */
-
-        function parseHash() {
-            const hash = location.hash.slice(1);
-            if (!hash) { showHome(); return; }
-            const [type, id] = hash.split('/');
-            if (type === 'topic' && id) {
-                openThread(id, true);
-            } else if (type === 'category' && id) {
-                openCategory(id, true);
-            } else if (type === 'post' && id) {
-                openThreadByPostId(id);
-            } else if (type === 'user' && id) {
-                openUserProfile(id);
-            } else if (type === 'latest') {
-                openLatestView(true);
-            } else if (type === 'popular') {
-                openPopularView(true);
-            } else if (type === 'users') {
-                openUsersView(true);
-            } else if (type === 'tags') {
-                openTagsView(true);
-            } else if (type === 'tag' && id) {
-                openTagView(decodeURIComponent(id), true);
-            } else {
-                showHome();
-            }
-        }
-
-        window.addEventListener('hashchange', parseHash);
 
         /* ============ רענון אוטומטי ברקע (בלי לקפוץ או לנווט) ============ */
 
