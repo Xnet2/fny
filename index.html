@@ -1813,6 +1813,30 @@
         @keyframes statusFadeOut {
             to { opacity: 0; }
         }
+
+        /* פוסטים/נושאים שנמחקו (מחיקה רכה) - מוצגים אפורים רק למי שמורשה לראות אותם */
+        .post-card.post-deleted {
+            opacity: 0.55;
+            filter: grayscale(0.6);
+        }
+
+        .post-status.deleted-tag {
+            color: #b91c1c;
+            background: #fee2e2;
+        }
+
+        .topic-deleted-banner {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #fee2e2;
+            color: #b91c1c;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-bottom: 14px;
+        }
     </style>
 </head>
 <body>
@@ -3346,6 +3370,20 @@
         // לבין הרגע שהוא באמת מופיע בתשובת השרת (השהיית תפוצה של השרת)
         function mergeServerData(serverPosts) {
             const serverIds = new Set(serverPosts.map(p => p.id));
+            const localById = new Map(allPosts.map(p => [p.id, p]));
+
+            // אם התשובה מהשרת חוזרת בלי פרטי ציטוט (למשל כי בגיליון חסרות העמודות
+            // quote_id / quote_author / quote_content), אבל היה לנו מקומית את אותו פוסט
+            // עם ציטוט - משמרים אותו כדי שהציטוט לא "ייעלם" ברענון האוטומטי.
+            serverPosts.forEach(sp => {
+                const local = localById.get(sp.id);
+                if (local && local.quote_content && !sp.quote_content) {
+                    sp.quote_id = local.quote_id;
+                    sp.quote_author = local.quote_author;
+                    sp.quote_content = local.quote_content;
+                }
+            });
+
             const pendingLocal = allPosts.filter(p => p._status === 'pending' && !serverIds.has(p.id));
             return serverPosts.concat(pendingLocal);
         }
@@ -3401,10 +3439,20 @@
 
         // מחזיר רק שורות של נושאים אמיתיים (לא כולל שורות שמייצגות קטגוריות)
         function getTopicsMap() {
+            // נושאים שהפוסט הראשי שלהם נמחק (מחיקה רכה) מוסתרים לגמרי ממי שאינו הכותב/מנהל
+            const blockedTopicIds = new Set();
+            allPosts.forEach(post => {
+                if (post.title && isPostDeleted(post) && !canSeeDeletedPost(post)) {
+                    blockedTopicIds.add(post.topic_id);
+                }
+            });
+
             const topicsMap = {};
             allPosts.forEach(post => {
                 if (!post.topic_id) return;
                 if (post.topic_id.indexOf(CATEGORY_PREFIX) === 0) return;
+                if (blockedTopicIds.has(post.topic_id)) return;
+                if (isPostDeleted(post) && !canSeeDeletedPost(post)) return; // תגובה בודדת שנמחקה ומוסתרת מהצופה הנוכחי
                 if (!topicsMap[post.topic_id]) topicsMap[post.topic_id] = [];
                 topicsMap[post.topic_id].push(post);
             });
@@ -3762,7 +3810,8 @@
 
         function openThread(topicId, fromHash) {
             const posts = allPosts.filter(p => p.topic_id === topicId);
-            if (posts.length === 0) {
+            const mainPostCheck = posts.find(p => p.title);
+            if (posts.length === 0 || (mainPostCheck && isPostDeleted(mainPostCheck) && !canSeeDeletedPost(mainPostCheck))) {
                 showToast('הנושא לא נמצא', 'error');
                 showHome();
                 return;
@@ -3819,6 +3868,17 @@
             return String(post && post.pinned) === '1';
         }
 
+        // מחיקה רכה: פוסט/נושא מסומן ב-X בעמודת deleted במקום להימחק פיזית מהגיליון
+        function isPostDeleted(post) {
+            return String(post && post.deleted) === 'X';
+        }
+
+        // רק הכותב של הפוסט או מנהל יכולים לראות אותו אחרי שנמחק (אפור)
+        function canSeeDeletedPost(post) {
+            if (!currentUser || !post) return false;
+            return currentUser.isAdmin || String(currentUser.email).toLowerCase() === String(post.author_email).toLowerCase();
+        }
+
         function getAllowedEmailsList(post) {
             return String((post && post.allowed_emails) || '')
                 .split(',')
@@ -3830,6 +3890,7 @@
         // אם לא הוגדרה רשימת הרשאות לנושא - כל משתמש מחובר יכול להגיב (ברירת המחדל הרגילה).
         function canReplyToTopic(mainPost) {
             if (!mainPost) return true;
+            if (isPostDeleted(mainPost)) return false;
             const list = getAllowedEmailsList(mainPost);
             if (list.length === 0) return true;
             if (currentUser && currentUser.isAdmin) return true;
@@ -3847,6 +3908,9 @@
             } else {
                 box.style.display = 'none';
                 notice.style.display = 'block';
+                notice.innerHTML = isPostDeleted(mainPost)
+                    ? '<i class="fa-solid fa-ban"></i> לא ניתן להגיב לנושא שנמחק.'
+                    : '<i class="fa-solid fa-lock"></i> הכתיבה בנושא זה מוגבלת למשתמשים מורשים בלבד.';
             }
         }
 
@@ -3888,6 +3952,8 @@
         }
 
         function renderThreadHeader(mainPost, topicId) {
+            const deleted = isPostDeleted(mainPost);
+
             const adminControls = (currentUser && currentUser.isAdmin) ? `
                 <button class="icon-btn" title="${isPinned(mainPost) ? 'בטל הצמדה' : 'הצמד נושא לראש הקטגוריה'}" onclick="togglePinTopic('${topicId}')">
                     <i class="fa-solid fa-thumbtack" style="${isPinned(mainPost) ? 'color:var(--primary);' : ''}"></i>
@@ -3899,15 +3965,21 @@
 
             const canManageTopic = currentUser && (currentUser.isAdmin || currentUser.email === mainPost.author_email);
             const ownerControls = canManageTopic ? `
-                <button class="icon-btn" title="עריכת הנושא" onclick="openEditTopicModal('${topicId}')">
+                ${!deleted ? `<button class="icon-btn" title="עריכת הנושא" onclick="openEditTopicModal('${topicId}')">
                     <i class="fa-solid fa-pen"></i>
-                </button>
-                <button class="icon-btn" title="מחיקת הנושא" onclick="deleteTopic('${topicId}')" style="color:#dc2626;">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
+                </button>` : ''}
+                ${deleted
+                    ? `<button class="icon-btn" title="שחזור הנושא" onclick="restoreTopic('${topicId}')" style="color:var(--like-color);">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>`
+                    : `<button class="icon-btn" title="מחיקת הנושא" onclick="deleteTopic('${topicId}')" style="color:#dc2626;">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>`
+                }
             ` : '';
 
             document.getElementById('thread-header').innerHTML = `
+                ${deleted ? '<div class="topic-deleted-banner"><i class="fa-solid fa-triangle-exclamation"></i> הנושא הזה נמחק. הוא מוצג רק לך כי אתה הכותב/מנהל, וגולשים אחרים לא יכולים לראות אותו.</div>' : ''}
                 <div class="thread-header-top">
                     <div>
                         <div class="topic-meta" style="margin-bottom: 8px;">
@@ -3951,14 +4023,17 @@
             const postsContainer = document.getElementById('posts-container');
             postsContainer.innerHTML = '';
 
-            posts.forEach((post, index) => {
+            const visiblePosts = posts.filter(p => !isPostDeleted(p) || canSeeDeletedPost(p));
+
+            visiblePosts.forEach((post, index) => {
                 const canManage = currentUser && (currentUser.isAdmin || currentUser.email === post.author_email);
                 const uid = userIdFromEmail(post.author_email);
                 const vote = getVoteState(post.id);
                 const isOp = index === 0;
+                const deleted = isPostDeleted(post);
 
                 const postDiv = document.createElement('div');
-                postDiv.className = 'post-card' + (isOp ? ' post-op' : '');
+                postDiv.className = 'post-card' + (isOp ? ' post-op' : '') + (deleted ? ' post-deleted' : '');
                 postDiv.id = 'post-card-' + post.id;
 
                 const quoteHtml = post.quote_content ? `
@@ -3980,6 +4055,7 @@
                                     ${escapeHtml(post.created_at || '')}
                                     ${post._status === 'pending' ? '<span class="post-status pending"><i class="fa-solid fa-circle-notch"></i> שולח...</span>' : ''}
                                     ${post._status === 'sent' ? '<span class="post-status sent"><i class="fa-solid fa-check"></i> נשמר</span>' : ''}
+                                    ${deleted ? '<span class="post-status deleted-tag"><i class="fa-solid fa-ban"></i> נמחק - מוצג לך בלבד</span>' : ''}
                                 </div>
                             </div>
                         </div>
@@ -3990,6 +4066,7 @@
                         <div class="post-content">${renderContent(post.content)}</div>
                     </div>
                     <div class="post-footer">
+                        ${!deleted ? `
                         <button class="vote-btn ${vote === 'dislike' ? 'voted-dislike' : ''}" onclick="votePost('${post.id}','dislike')" title="לא אהבתי">
                             <i class="fa-regular fa-thumbs-down"></i> <span id="dislike-count-${post.id}">${num(post.dislikes)}</span>
                         </button>
@@ -4001,14 +4078,17 @@
                         </button>
                         <button class="vote-btn" onclick="copyLink('post', '${post.id}')" title="העתק קישור להודעה">
                             <i class="fa-solid fa-link"></i>
-                        </button>
+                        </button>` : ''}
                         <div class="post-footer-spacer"></div>
                         ${canManage ? `
                         <div class="post-menu-wrap">
                             <button class="icon-btn" onclick="togglePostMenu('${post.id}')" title="עוד אפשרויות"><i class="fa-solid fa-ellipsis"></i></button>
                             <div class="post-menu" id="post-menu-${post.id}">
-                                <button onclick="openEditModal('${post.id}')"><i class="fa-solid fa-pen"></i> ערוך</button>
-                                <button class="danger" onclick="deletePost('${post.id}')"><i class="fa-solid fa-trash"></i> מחק</button>
+                                ${!deleted ? `<button onclick="openEditModal('${post.id}')"><i class="fa-solid fa-pen"></i> ערוך</button>` : ''}
+                                ${deleted
+                                    ? `<button onclick="restorePost('${post.id}')"><i class="fa-solid fa-rotate-left"></i> שחזור</button>`
+                                    : `<button class="danger" onclick="deletePost('${post.id}')"><i class="fa-solid fa-trash"></i> מחק</button>`
+                                }
                             </div>
                         </div>` : ''}
                     </div>
@@ -4350,23 +4430,49 @@
                 showToast('אין לך הרשאה למחוק נושא זה', 'error');
                 return;
             }
-            const categoryOfTopic = mainPost.category;
-            showConfirm('האם למחוק את הנושא כולו לצמיתות? כל התגובות שבו יימחקו גם הן ולא ניתן יהיה לשחזר.', async () => {
+            showConfirm('האם למחוק את הנושא? ניתן לשחזר אותו בכל שלב דרך אותו תפריט.', async () => {
+                const prevDeleted = mainPost.deleted;
+                mainPost.deleted = 'X';
+                renderThreadHeader(mainPost, topicId);
+                renderPosts(allPosts.filter(p => p.topic_id === topicId));
+                showToast('הנושא נמחק', 'success');
                 try {
-                    const ok = await sheetdbDelete('topic_id', topicId);
+                    const ok = await sheetdbPatch('id', mainPost.id, { deleted: 'X' });
                     if (!ok) throw new Error('המחיקה נכשלה בשרת');
-
-                    await fetchPosts();
-                    showToast('הנושא נמחק', 'success');
-                    if (categoryOfTopic && getCategoryById(categoryOfTopic)) {
-                        openCategory(categoryOfTopic, false);
-                    } else {
-                        showHome();
-                    }
                 } catch (err) {
-                    showToast('שגיאה במחיקת הנושא', 'error');
+                    mainPost.deleted = prevDeleted;
+                    if (currentTopicId === topicId) {
+                        renderThreadHeader(mainPost, topicId);
+                        renderPosts(allPosts.filter(p => p.topic_id === topicId));
+                    }
+                    showToast('שגיאה במחיקת הנושא, נסו שוב', 'error');
                 }
             });
+        }
+
+        async function restoreTopic(topicId) {
+            const mainPost = allPosts.find(p => p.topic_id === topicId && p.title);
+            if (!mainPost) return;
+            const canManage = currentUser && (currentUser.isAdmin || currentUser.email === mainPost.author_email);
+            if (!canManage) return;
+
+            mainPost.deleted = '';
+            if (currentTopicId === topicId) {
+                renderThreadHeader(mainPost, topicId);
+                renderPosts(allPosts.filter(p => p.topic_id === topicId));
+            }
+            showToast('הנושא שוחזר', 'success');
+            try {
+                const ok = await sheetdbPatch('id', mainPost.id, { deleted: '' });
+                if (!ok) throw new Error('השחזור נכשל בשרת');
+            } catch (err) {
+                mainPost.deleted = 'X';
+                if (currentTopicId === topicId) {
+                    renderThreadHeader(mainPost, topicId);
+                    renderPosts(allPosts.filter(p => p.topic_id === topicId));
+                }
+                showToast('שגיאה בשחזור הנושא, נסו שוב', 'error');
+            }
         }
 
         async function submitReply() {
@@ -4489,25 +4595,41 @@
         }
 
         function deletePost(id) {
+            const post = allPosts.find(p => p.id === id);
+            if (!post) return;
             showConfirm('האם אתה בטוח שברצונך למחוק הודעה זו?', async () => {
+                const prevDeleted = post.deleted;
+                post.deleted = 'X';
+                if (currentTopicId === post.topic_id) renderPosts(allPosts.filter(p => p.topic_id === currentTopicId));
+                showToast('ההודעה נמחקה', 'success');
                 try {
-                    const ok = await sheetdbDelete('id', id);
+                    const ok = await sheetdbPatch('id', id, { deleted: 'X' });
                     if (!ok) throw new Error('המחיקה נכשלה בשרת');
-
-                    await fetchPosts();
-                    if (currentTopicId) {
-                        const remainingInThread = allPosts.filter(p => p.topic_id === currentTopicId && p.id !== id);
-                        if (remainingInThread.length === 0) {
-                            showHome();
-                        } else {
-                            openThread(currentTopicId, true);
-                        }
-                    }
-                    showToast('ההודעה נמחקה', 'success');
                 } catch (err) {
-                    showToast('שגיאה במחיקת ההודעה', 'error');
+                    post.deleted = prevDeleted;
+                    if (currentTopicId === post.topic_id) renderPosts(allPosts.filter(p => p.topic_id === currentTopicId));
+                    showToast('שגיאה במחיקת ההודעה, נסו שוב', 'error');
                 }
             });
+        }
+
+        async function restorePost(id) {
+            const post = allPosts.find(p => p.id === id);
+            if (!post) return;
+            const canManage = currentUser && (currentUser.isAdmin || currentUser.email === post.author_email);
+            if (!canManage) return;
+
+            post.deleted = '';
+            if (currentTopicId === post.topic_id) renderPosts(allPosts.filter(p => p.topic_id === currentTopicId));
+            showToast('ההודעה שוחזרה', 'success');
+            try {
+                const ok = await sheetdbPatch('id', id, { deleted: '' });
+                if (!ok) throw new Error('השחזור נכשל בשרת');
+            } catch (err) {
+                post.deleted = 'X';
+                if (currentTopicId === post.topic_id) renderPosts(allPosts.filter(p => p.topic_id === currentTopicId));
+                showToast('שגיאה בשחזור ההודעה, נסו שוב', 'error');
+            }
         }
 
         /* ============ פאנל צד: משתמשים ============ */
@@ -4579,6 +4701,7 @@
                     p.title.toLowerCase().includes(query) ||
                     (p.content || '').toLowerCase().includes(query)
                 ))
+                .filter(p => !isPostDeleted(p) || canSeeDeletedPost(p))
                 .slice(0, 30);
             if (matches.length === 0) {
                 results.innerHTML = '<div class="panel-empty">לא נמצאו נושאים תואמים</div>';
@@ -4872,7 +4995,9 @@
             setActiveNav(null);
             closeSidebarPanel();
 
-            const userPosts = allPosts.filter(p => p.author_email === user.email);
+            const userPosts = allPosts
+                .filter(p => p.author_email === user.email)
+                .filter(p => !isPostDeleted(p) || canSeeDeletedPost(p));
             const topicsStarted = userPosts.filter(p => p.title).length;
             const isAdmin = user.email === ADMIN_EMAIL;
 
@@ -4905,7 +5030,9 @@
 
             userPosts.slice().reverse().forEach(p => {
                 const topicPosts = allPosts.filter(tp => tp.topic_id === p.topic_id);
-                const mainPost = topicPosts[0];
+                const mainPost = topicPosts.find(tp => tp.title);
+                if (!mainPost) return;
+                if (isPostDeleted(mainPost) && !canSeeDeletedPost(mainPost)) return; // הנושא נמחק ומוסתר מהצופה הנוכחי
                 const card = document.createElement('div');
                 card.className = 'topic-card';
                 card.onclick = () => { location.hash = '#post/' + p.id; };
