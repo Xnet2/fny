@@ -2056,6 +2056,26 @@
             background: #fee2e2;
         }
 
+        .restore-inline-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            margin-right: 4px;
+            padding: 1px 7px;
+            border: none;
+            border-radius: 8px;
+            background: #b91c1c;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .restore-inline-btn:hover {
+            background: #991b1b;
+        }
+
         .topic-deleted-banner {
             display: flex;
             align-items: center;
@@ -4575,7 +4595,7 @@
                                     ${escapeHtml(post.created_at || '')}
                                     ${post._status === 'pending' ? '<span class="post-status pending"><i class="fa-solid fa-circle-notch"></i> שולח...</span>' : ''}
                                     ${post._status === 'sent' ? '<span class="post-status sent"><i class="fa-solid fa-check"></i> נשמר</span>' : ''}
-                                    ${deleted ? '<span class="post-status deleted-tag"><i class="fa-solid fa-ban"></i> נמחק - מוצג לך בלבד</span>' : ''}
+                                    ${deleted ? `<span class="post-status deleted-tag"><i class="fa-solid fa-ban"></i> נמחק - מוצג לך בלבד${canManage ? ` <button class="restore-inline-btn" onclick="restorePost('${post.id}')"><i class="fa-solid fa-rotate-left"></i> שחזור</button>` : ''}</span>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -4600,15 +4620,12 @@
                             <i class="fa-solid fa-link"></i>
                         </button>` : ''}
                         <div class="post-footer-spacer"></div>
-                        ${canManage ? `
+                        ${canManage && !deleted ? `
                         <div class="post-menu-wrap">
                             <button class="icon-btn" onclick="togglePostMenu('${post.id}')" title="עוד אפשרויות"><i class="fa-solid fa-ellipsis"></i></button>
                             <div class="post-menu" id="post-menu-${post.id}">
-                                ${!deleted ? `<button onclick="openEditModal('${post.id}')"><i class="fa-solid fa-pen"></i> ערוך</button>` : ''}
-                                ${deleted
-                                    ? `<button onclick="restorePost('${post.id}')"><i class="fa-solid fa-rotate-left"></i> שחזור</button>`
-                                    : `<button class="danger" onclick="deletePost('${post.id}')"><i class="fa-solid fa-trash"></i> מחק</button>`
-                                }
+                                <button onclick="openEditModal('${post.id}')"><i class="fa-solid fa-pen"></i> ערוך</button>
+                                <button class="danger" onclick="deletePost('${post.id}')"><i class="fa-solid fa-trash"></i> מחק</button>
                             </div>
                         </div>` : ''}
                     </div>
