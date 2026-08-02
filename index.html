@@ -3941,6 +3941,16 @@
         }
 
         // מחזיר רק שורות של נושאים אמיתיים (לא כולל שורות שמייצגות קטגוריות)
+        // ערך מספרי להשוואה כרונולוגית בין פוסטים - מבוסס על חותמת הזמן שמוטבעת ב-id
+        // (post_<timestamp>), ולא על created_at שהוא מחרוזת מעוצבת בעברית ולא ניתנת למיון לקסיקוגרפי נכון
+        function postTimeValue(post) {
+            if (!post) return 0;
+            const m = /(\d{10,})$/.exec(String(post.id || ''));
+            if (m) return parseInt(m[1], 10);
+            const t = Date.parse(post.created_at);
+            return isNaN(t) ? 0 : t;
+        }
+
         function getTopicsMap() {
             // נושאים שהפוסט הראשי שלהם נמחק (מחיקה רכה) מוסתרים לגמרי ממי שאינו הכותב/מנהל
             const blockedTopicIds = new Set();
@@ -4050,7 +4060,7 @@
                     const posts = topicsMap[tid];
                     postsCount += posts.length;
                     const last = posts[posts.length - 1];
-                    if (!latestPost || String(last.created_at || '') > String(latestPost.created_at || '')) {
+                    if (!latestPost || postTimeValue(last) > postTimeValue(latestPost)) {
                         latestPost = last;
                     }
                 });
@@ -5417,7 +5427,7 @@
                 const posts = topicsMap[topicId];
                 const mainPost = posts[0];
                 const lastPost = posts[posts.length - 1];
-                const totalVotes = posts.reduce((sum, p) => sum + num(p.likes), 0);
+                const totalVotes = num(mainPost.likes);
 
                 const thumbMatch = (mainPost.content || '').match(/!\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/);
                 const thumbHtml = thumbMatch ? `<img src="${thumbMatch[1]}" class="topic-thumb" alt="">` : '';
@@ -5462,7 +5472,7 @@
             return Object.keys(topicsMap).sort((a, b) => {
                 const la = topicsMap[a][topicsMap[a].length - 1];
                 const lb = topicsMap[b][topicsMap[b].length - 1];
-                return (lb.created_at || '').localeCompare(la.created_at || '') || (b > a ? 1 : -1);
+                return postTimeValue(lb) - postTimeValue(la);
             });
         }
 
