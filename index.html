@@ -5083,7 +5083,8 @@
             const newContent = document.getElementById('edit-content').value.trim();
             if (!newContent || !editingPostId) return;
 
-            const post = allPosts.find(p => p.id === editingPostId);
+            const postId = editingPostId;
+            const post = allPosts.find(p => p.id === postId);
             const prevContent = post ? post.content : null;
             const topicIdAtEdit = post ? post.topic_id : null;
 
@@ -5098,7 +5099,7 @@
             }
 
             try {
-                const ok = await sheetdbPatch('id', editingPostId, { content: newContent });
+                const ok = await sheetdbPatch('id', postId, { content: newContent });
                 if (!ok) throw new Error('העדכון נכשל בשרת');
                 if (post) {
                     post._status = 'sent';
