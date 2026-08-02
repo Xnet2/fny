@@ -23,10 +23,10 @@
     </script>
 
     <!-- פאביקון: בועת צ'אט בצבע הראשי של האתר, מוטבע כ-SVG כדי לא לדרוש קובץ נפרד -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230284c7'/%3E%3Crect x='14' y='16' width='36' height='26' rx='8' fill='%23ffffff'/%3E%3Cpath d='M22 42 L22 50 L30 42 Z' fill='%23ffffff'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230471ff'/%3E%3Crect x='14' y='16' width='36' height='26' rx='8' fill='%23ffffff'/%3E%3Cpath d='M22 42 L22 50 L30 42 Z' fill='%23ffffff'/%3E%3C/svg%3E">
 
     <!-- Google Fonts & FontAwesome -->
-    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Google Sign-In SDK -->
@@ -34,22 +34,22 @@
 
     <style>
         :root {
-            --bg-main: #f6f7f9;
+            --bg-main: #f8f9fa;
             --bg-card: #ffffff;
-            --primary: #0284c7;
-            --primary-hover: #0369a1;
-            --primary-light: #e0f2fe;
-            --brand-a: #38bdf8;
-            --brand-b: #0369a1;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border-color: #e7eaf0;
-            --admin-badge: #ef4444;
-            --like-color: #16a34a;
-            --dislike-color: #dc2626;
-            --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 1px rgba(15, 23, 42, 0.03);
-            --shadow-hover: 0 6px 16px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.05);
-            --avatar-colors: #0ea5e9, #f97316, #8b5cf6, #16a34a, #ef4444, #0d9488, #d946ef, #f59e0b, #64748b, #2563eb, #dc2626, #059669;
+            --primary: #0471ff;
+            --primary-hover: #0361d6;
+            --primary-light: #e8f1ff;
+            --brand-a: #0471ff;
+            --brand-b: #0350b0;
+            --text-main: #212529;
+            --text-muted: #6c757d;
+            --border-color: #dee2e6;
+            --admin-badge: #dc3545;
+            --like-color: #198754;
+            --dislike-color: #dc3545;
+            --shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.06);
+            --avatar-colors: #0471ff, #fd7e14, #6f42c1, #198754, #dc3545, #0dcaf0, #d63384, #ffc107, #6c757d, #0d6efd, #b02a37, #20c997;
             --rail-w: 56px;
         }
 
@@ -57,7 +57,11 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Rubik', sans-serif;
+            font-family: 'Inter', sans-serif;
+        }
+
+        h1, h2, h3, h4, .sidebar-logo, .topic-details h3 {
+            font-family: 'Poppins', 'Inter', sans-serif;
         }
 
         body {
@@ -96,7 +100,7 @@
             font-size: 14px;
             font-weight: bold;
             margin-bottom: 6px;
-            box-shadow: 0 2px 8px rgba(3, 105, 161, 0.35);
+            box-shadow: 0 2px 8px rgba(4, 113, 255, 0.35);
         }
 
         .sidebar-icon {
@@ -560,7 +564,7 @@
             align-items: center;
             justify-content: center;
             font-size: 24px;
-            box-shadow: 0 4px 12px rgba(3, 105, 161, 0.3);
+            box-shadow: 0 4px 12px rgba(4, 113, 255, 0.3);
         }
 
         .login-card h2 {
@@ -578,7 +582,7 @@
 
         .login-guidelines {
             text-align: right;
-            background: #f8fafc;
+            background: #eef5ff;
             border: 1px solid var(--border-color);
             border-radius: 10px;
             padding: 14px 16px;
@@ -696,15 +700,15 @@
         .btn-primary {
             background: var(--primary);
             color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
+            border: 1px solid var(--primary);
+            padding: 8px 18px;
+            border-radius: 6px;
             font-weight: 500;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            transition: background 0.2s;
+            transition: background-color 0.15s, border-color 0.15s;
             font-size: 14px;
         }
 
@@ -777,7 +781,7 @@
         }
 
         .topic-card:hover {
-            background: #f8fafc;
+            background: #eef5ff;
             border-color: var(--border-color);
             transform: none;
         }
@@ -902,37 +906,37 @@
         }
 
         .badge-category {
-            background: #e0f2fe;
-            color: #0369a1;
-            padding: 2px 8px;
-            border-radius: 12px;
+            background: var(--primary-light);
+            color: var(--primary-hover);
+            padding: 0.3em 0.65em;
+            border-radius: 50rem;
             font-size: 11px;
-            font-weight: 500;
+            font-weight: 700;
         }
 
         .tag-chip {
-            padding: 2px 9px;
-            border-radius: 12px;
+            padding: 0.3em 0.7em;
+            border-radius: 50rem;
             font-size: 10.5px;
-            font-weight: 600;
+            font-weight: 700;
         }
 
         .badge-admin {
-            background: #fee2e2;
-            color: #b91c1c;
-            padding: 2px 8px;
-            border-radius: 12px;
+            background: #dc3545;
+            color: #fff;
+            padding: 0.3em 0.65em;
+            border-radius: 50rem;
             font-size: 11px;
-            font-weight: 500;
+            font-weight: 700;
         }
 
         .badge-pinned {
-            background: #fef3c7;
-            color: #b45309;
-            padding: 2px 8px;
-            border-radius: 12px;
+            background: #ffc107;
+            color: #212529;
+            padding: 0.3em 0.65em;
+            border-radius: 50rem;
             font-size: 11px;
-            font-weight: 500;
+            font-weight: 700;
         }
 
         .reply-restricted-notice {
@@ -1000,7 +1004,7 @@
         }
 
         .category-card:hover {
-            background: #f8fafc;
+            background: #eef5ff;
             transform: none;
         }
 
@@ -1283,7 +1287,7 @@
             height: 40px;
             border-radius: 5px;
             background: var(--primary);
-            box-shadow: 0 1px 4px rgba(2, 132, 199, 0.4);
+            box-shadow: 0 1px 4px rgba(4, 113, 255, 0.4);
         }
 
         .scroller-thumb-label {
@@ -1476,7 +1480,7 @@
         }
 
         .post-quote {
-            background: #f8fafc;
+            background: #eef5ff;
             border-right: 3px solid var(--primary);
             border-radius: 6px;
             padding: 10px 14px;
@@ -1747,7 +1751,7 @@
 
         .reply-quote-preview {
             display: none;
-            background: #f8fafc;
+            background: #eef5ff;
             border-right: 3px solid var(--primary);
             padding: 8px 12px;
             border-radius: 6px;
@@ -1767,7 +1771,7 @@
             border-bottom: none;
             border-radius: 8px 8px 0 0;
             padding: 6px 8px;
-            background: #f8fafc;
+            background: #eef5ff;
             margin-top: 8px;
         }
 
@@ -2309,7 +2313,7 @@
         }
 
         .notif-item:hover {
-            background: #f8fafc;
+            background: #eef5ff;
         }
 
         .notif-item.unread {
@@ -3331,7 +3335,7 @@
                 { bg: '#dcfce7', color: '#15803d' },
                 { bg: '#ffedd5', color: '#c2410c' },
                 { bg: '#ede9fe', color: '#6d28d9' },
-                { bg: '#e0f2fe', color: '#0369a1' },
+                { bg: '#e8f1ff', color: '#0361d6' },
                 { bg: '#fce7f3', color: '#be185d' },
                 { bg: '#fef9c3', color: '#a16207' },
                 { bg: '#f1f5f9', color: '#475569' }
