@@ -1280,7 +1280,7 @@
 
         .scroller-thumb-bar {
             width: 9px;
-            min-height: 26px;
+            height: 40px;
             border-radius: 5px;
             background: var(--primary);
             box-shadow: 0 1px 4px rgba(2, 132, 199, 0.4);
@@ -1376,11 +1376,15 @@
         }
 
         .post-card {
-            background: #ffffff;
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 14px;
+            background: transparent;
             border: none;
             border-bottom: 1px solid var(--border-color);
             border-radius: 0;
-            padding: 0;
+            padding: 18px 22px;
             margin-bottom: 0;
             box-shadow: none;
             scroll-margin-top: 90px;
@@ -1392,47 +1396,74 @@
         }
 
         .post-card.post-op {
-            border-top: 3px solid var(--primary);
+            background: linear-gradient(180deg, var(--primary-light) 0%, transparent 55%);
         }
 
         .post-card.highlight {
             background: var(--primary-light);
         }
 
+        .post-avatar-col {
+            flex-shrink: 0;
+        }
+
+        .post-main-col {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
         .post-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: 18px 22px 14px;
+            align-items: flex-start;
+            gap: 10px;
             border-bottom: none;
-            margin-bottom: 4px;
+            margin-bottom: 0;
         }
 
-        .post-user {
+        .post-user-line {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
-            gap: 12px;
+            column-gap: 7px;
+            row-gap: 2px;
+            font-size: 13.5px;
+            min-width: 0;
         }
 
         .post-author-name {
             cursor: pointer;
-            font-size: 13.5px;
-            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 14.5px;
+            color: var(--text-main);
         }
         .post-author-name:hover {
             color: var(--primary);
+        }
+
+        .post-meta-time {
+            font-size: 12px;
+            color: var(--text-muted);
         }
 
         .post-op-badge {
             color: var(--primary);
             font-size: 10.5px;
             font-weight: 600;
+            background: var(--primary-light);
+            padding: 2px 7px;
+            border-radius: 20px;
         }
 
         .post-index {
             font-size: 12px;
             color: var(--text-muted);
             text-decoration: none;
+            flex-shrink: 0;
+            margin-top: 2px;
         }
 
         .post-index:hover {
@@ -1441,7 +1472,7 @@
         }
 
         .post-body {
-            padding: 0 22px 22px;
+            padding: 0;
         }
 
         .post-quote {
@@ -1465,8 +1496,8 @@
         }
 
         .post-content {
-            font-size: 16.5px;
-            line-height: 1.85;
+            font-size: 16px;
+            line-height: 1.8;
             color: var(--text-main);
             letter-spacing: 0.1px;
         }
@@ -1510,10 +1541,11 @@
         .post-footer {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 2px;
             flex-wrap: wrap;
-            padding: 12px 22px;
-            border-top: 1px solid #f4f6f8;
+            padding: 2px 0 0;
+            border-top: none;
+            margin-top: 4px;
         }
 
         .vote-btn {
@@ -1521,8 +1553,8 @@
             align-items: center;
             gap: 5px;
             background: none;
-            border: 1px solid var(--border-color);
-            padding: 5px 10px;
+            border: none;
+            padding: 6px 9px;
             border-radius: 20px;
             cursor: pointer;
             font-size: 12.5px;
@@ -1531,19 +1563,15 @@
         }
 
         .vote-btn:hover {
-            border-color: var(--primary);
+            background: var(--bg-main);
             color: var(--primary);
         }
 
         .vote-btn.voted-like {
-            background: #f0fdf4;
-            border-color: var(--like-color);
             color: var(--like-color);
         }
 
         .vote-btn.voted-dislike {
-            background: #fef2f2;
-            border-color: var(--dislike-color);
             color: var(--dislike-color);
         }
 
@@ -2102,9 +2130,8 @@
             .brand-logo-icon { width: 32px; height: 32px; font-size: 14px; border-radius: 9px; }
             .container { padding: 0 10px; margin: 14px auto; }
             .sidebar, .side-rail-left { gap: 6px; }
-            .post-header { padding: 14px 16px 10px; }
-            .post-body { padding: 0 16px 16px; }
-            .post-footer { padding: 10px 16px; }
+            .post-card { padding: 14px 16px; gap: 10px; }
+            .post-avatar-col img, .post-avatar-col > div { width: 36px !important; height: 36px !important; }
             .post-content { font-size: 16px; }
         }
 
@@ -5133,50 +5160,52 @@
                 ` : '';
 
                 postDiv.innerHTML = `
-                    <div class="post-header">
-                        <div class="post-user">
-                            ${avatarHtml(post.author_name, post.author_email, post.author_avatar, 38, `style="cursor:pointer;" onclick="openUserProfile('${uid}')"`)}
-                            <div>
+                    <div class="post-avatar-col">
+                        ${avatarHtml(post.author_name, post.author_email, post.author_avatar, 46, `style="cursor:pointer;" onclick="openUserProfile('${uid}')"`)}
+                    </div>
+                    <div class="post-main-col">
+                        <div class="post-header">
+                            <div class="post-user-line">
                                 <strong class="post-author-name" onclick="openUserProfile('${uid}')">${escapeHtml(post.author_name)}</strong>
                                 ${post.author_email === ADMIN_EMAIL ? '<span class="badge-admin">מנהל</span>' : ''}
                                 ${isOp ? '<span class="post-op-badge">פתח/ה את הנושא</span>' : ''}
-                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-                                    ${escapeHtml(post.created_at || '')}
+                                <span class="post-meta-time">
+                                    כתב ${escapeHtml(post.created_at || '')}
                                     ${post._status === 'pending' ? '<span class="post-status pending"><i class="fa-solid fa-circle-notch"></i> שולח...</span>' : ''}
                                     ${post._status === 'sent' ? '<span class="post-status sent"><i class="fa-solid fa-check"></i> נשמר</span>' : ''}
                                     ${deleted ? `<span class="post-status deleted-tag"><i class="fa-solid fa-ban"></i> נמחק - מוצג לך בלבד${canManage ? ` <button class="restore-inline-btn" onclick="restorePost('${post.id}')"><i class="fa-solid fa-rotate-left"></i> שחזור</button>` : ''}</span>` : ''}
-                                </div>
+                                </span>
                             </div>
+                            <a href="${getLink('post', post.id)}" class="post-index" title="קישור להודעה זו" onclick="if(event.ctrlKey||event.metaKey||event.shiftKey||event.button!==0) return; event.preventDefault(); openThreadByPostId('${post.id}');">#${index + 1}</a>
                         </div>
-                        <a href="${getLink('post', post.id)}" class="post-index" title="קישור להודעה זו" onclick="if(event.ctrlKey||event.metaKey||event.shiftKey||event.button!==0) return; event.preventDefault(); openThreadByPostId('${post.id}');">#${index + 1}</a>
-                    </div>
-                    <div class="post-body">
-                        ${quoteHtml}
-                        <div class="post-content">${renderContent(post.content)}</div>
-                    </div>
-                    <div class="post-footer">
-                        ${!deleted ? `
-                        <button class="vote-btn ${vote === 'like' ? 'voted-like' : ''}" onclick="votePost('${post.id}','like')" title="אהבתי">
-                            <i class="fa-regular fa-thumbs-up"></i> <span id="like-count-${post.id}">${num(post.likes)}</span>
-                        </button>
-                        <button class="vote-btn ${vote === 'dislike' ? 'voted-dislike' : ''}" onclick="votePost('${post.id}','dislike')" title="לא אהבתי">
-                            <i class="fa-regular fa-thumbs-down"></i> <span id="dislike-count-${post.id}">${num(post.dislikes)}</span>
-                        </button>
-                        <button class="vote-btn" onclick="startQuoteReply('${post.id}')" title="ציטוט ותגובה">
-                            <i class="fa-solid fa-reply"></i> תגובה
-                        </button>
-                        <button class="vote-btn" onclick="copyLink('post', '${post.id}')" title="העתק קישור להודעה">
-                            <i class="fa-solid fa-link"></i>
-                        </button>` : ''}
-                        <div class="post-footer-spacer"></div>
-                        ${canManage && !deleted ? `
-                        <div class="post-menu-wrap">
-                            <button class="icon-btn" onclick="togglePostMenu('${post.id}')" title="עוד אפשרויות"><i class="fa-solid fa-ellipsis"></i></button>
-                            <div class="post-menu" id="post-menu-${post.id}">
-                                <button onclick="openEditModal('${post.id}')"><i class="fa-solid fa-pen"></i> ערוך</button>
-                                <button class="danger" onclick="deletePost('${post.id}')"><i class="fa-solid fa-trash"></i> מחק</button>
-                            </div>
-                        </div>` : ''}
+                        <div class="post-body">
+                            ${quoteHtml}
+                            <div class="post-content">${renderContent(post.content)}</div>
+                        </div>
+                        <div class="post-footer">
+                            ${!deleted ? `
+                            <button class="vote-btn ${vote === 'like' ? 'voted-like' : ''}" onclick="votePost('${post.id}','like')" title="אהבתי">
+                                <i class="fa-regular fa-thumbs-up"></i> <span id="like-count-${post.id}">${num(post.likes)}</span>
+                            </button>
+                            <button class="vote-btn ${vote === 'dislike' ? 'voted-dislike' : ''}" onclick="votePost('${post.id}','dislike')" title="לא אהבתי">
+                                <i class="fa-regular fa-thumbs-down"></i> <span id="dislike-count-${post.id}">${num(post.dislikes)}</span>
+                            </button>
+                            <button class="vote-btn" onclick="startQuoteReply('${post.id}')" title="ציטוט ותגובה">
+                                <i class="fa-solid fa-reply"></i> תגובה
+                            </button>
+                            <button class="vote-btn" onclick="copyLink('post', '${post.id}')" title="העתק קישור להודעה">
+                                <i class="fa-solid fa-link"></i>
+                            </button>` : ''}
+                            <div class="post-footer-spacer"></div>
+                            ${canManage && !deleted ? `
+                            <div class="post-menu-wrap">
+                                <button class="icon-btn" onclick="togglePostMenu('${post.id}')" title="עוד אפשרויות"><i class="fa-solid fa-ellipsis"></i></button>
+                                <div class="post-menu" id="post-menu-${post.id}">
+                                    <button onclick="openEditModal('${post.id}')"><i class="fa-solid fa-pen"></i> ערוך</button>
+                                    <button class="danger" onclick="deletePost('${post.id}')"><i class="fa-solid fa-trash"></i> מחק</button>
+                                </div>
+                            </div>` : ''}
+                        </div>
                     </div>
                 `;
                 postsContainer.appendChild(postDiv);
@@ -5243,7 +5272,7 @@
             const track = document.getElementById('scroller-track');
             const thumb = document.getElementById('scroller-thumb');
             const trackHeight = track.clientHeight;
-            const thumbHeight = thumb.offsetHeight || 26;
+            const thumbHeight = thumb.offsetHeight || 40;
             return { track, thumb, trackHeight, thumbHeight, travel: Math.max(trackHeight - thumbHeight, 1) };
         }
 
