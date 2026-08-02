@@ -1025,6 +1025,18 @@
             display: none;
         }
 
+        /* רוחב קריאה נוח: כותרת הנושא, ההודעות ותיבת התגובה מוגבלות לרוחב שנוח לעין,
+           במקום להימתח על פני כל רוחב המסך - זה מה שהופך את הטקסט עצמו לגיבור התצוגה,
+           ולא הכותרות/כפתורים/מסגרות שסביבו */
+        #thread-header,
+        #posts-container,
+        #reply-box,
+        #reply-restricted-notice {
+            max-width: 760px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
         .thread-header {
             background: #ffffff;
             border: 1px solid var(--border-color);
@@ -1114,9 +1126,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 20px 12px;
-            border-bottom: 1px solid #f1f5f9;
-            margin-bottom: 14px;
+            padding: 18px 22px 14px;
+            border-bottom: none;
+            margin-bottom: 4px;
         }
 
         .post-user {
@@ -1127,7 +1139,8 @@
 
         .post-author-name {
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13.5px;
+            color: var(--text-muted);
         }
         .post-author-name:hover {
             color: var(--primary);
@@ -1151,15 +1164,15 @@
         }
 
         .post-body {
-            padding: 0 20px 18px;
+            padding: 0 22px 22px;
         }
 
         .post-quote {
             background: #f8fafc;
             border-right: 3px solid var(--primary);
             border-radius: 6px;
-            padding: 9px 12px;
-            margin-bottom: 12px;
+            padding: 10px 14px;
+            margin-bottom: 14px;
             font-size: 13px;
             color: var(--text-muted);
         }
@@ -1175,25 +1188,34 @@
         }
 
         .post-content {
-            font-size: 15.5px;
-            line-height: 1.75;
-            color: #334155;
+            font-size: 16.5px;
+            line-height: 1.85;
+            color: var(--text-main);
+            letter-spacing: 0.1px;
+        }
+
+        /* מרווח בין שורות של פסקה (מיושם דרך ה-<br> הכפול שיוצר עיבוד התוכן) */
+        .post-content br + br {
+            content: "";
+            display: block;
+            margin-top: 8px;
         }
 
         .post-content h2, .post-content h3, .post-content h4 {
-            margin: 10px 0 6px;
+            margin: 14px 0 8px;
+            line-height: 1.4;
         }
         .post-content code {
             background: #f1f5f9;
             padding: 2px 6px;
             border-radius: 4px;
-            font-size: 13px;
+            font-size: 14px;
         }
         .post-content blockquote {
             border-right: 3px solid var(--border-color);
-            padding-right: 10px;
+            padding-right: 12px;
             color: var(--text-muted);
-            margin: 6px 0;
+            margin: 10px 0;
         }
         .post-content img {
             display: block;
@@ -1213,8 +1235,8 @@
             align-items: center;
             gap: 6px;
             flex-wrap: wrap;
-            padding: 10px 20px;
-            border-top: 1px solid #f1f5f9;
+            padding: 12px 22px;
+            border-top: 1px solid #f4f6f8;
         }
 
         .vote-btn {
@@ -1583,6 +1605,10 @@
             .brand-logo-icon { width: 32px; height: 32px; font-size: 14px; border-radius: 9px; }
             .container { padding: 0 10px; margin: 14px auto; }
             .sidebar, .side-rail-left { gap: 6px; }
+            .post-header { padding: 14px 16px 10px; }
+            .post-body { padding: 0 16px 16px; }
+            .post-footer { padding: 10px 16px; }
+            .post-content { font-size: 16px; }
         }
 
         /* תפריט פרופיל בסרגל השמאלי */
@@ -2075,9 +2101,11 @@
 
             <!-- תצוגת נושא בודד (שרשור) -->
             <div id="thread-view" class="thread-view">
-                <button class="btn-secondary" onclick="showHome()" style="margin-bottom: 15px;">
-                    <i class="fa-solid fa-arrow-right"></i> חזרה לרשימת הנושאים
-                </button>
+                <div style="max-width: 760px; margin: 0 auto;">
+                    <button class="btn-secondary" onclick="showHome()" style="margin-bottom: 15px;">
+                        <i class="fa-solid fa-arrow-right"></i> חזרה לרשימת הנושאים
+                    </button>
+                </div>
 
                 <div id="thread-header" class="thread-header"></div>
                 <div id="posts-container" class="posts-list"></div>
