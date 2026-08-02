@@ -1555,6 +1555,56 @@
             }
         }
 
+        /* ידית גרירה להגבהת/הנמכת פס התגובה, וכפתור הגדלה מהירה */
+        .reply-resize-handle {
+            width: 100%;
+            height: 12px;
+            cursor: ns-resize;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            touch-action: none;
+        }
+
+        .reply-box.collapsed .reply-resize-handle {
+            display: none;
+        }
+
+        .reply-resize-handle::before {
+            content: '';
+            width: 40px;
+            height: 4px;
+            border-radius: 4px;
+            background: var(--border-color);
+        }
+
+        .reply-resize-handle:hover::before {
+            background: var(--primary);
+        }
+
+        .reply-size-toggle-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .reply-size-toggle-btn:hover {
+            background: #f1f5f9;
+            color: var(--text-main);
+        }
+
+        #reply-box .reply-box-body textarea {
+            resize: none;
+        }
+
         .reply-quote-preview {
             display: none;
             background: #f8fafc;
@@ -2463,11 +2513,15 @@
 
                 <!-- תיבת תגובה -->
                 <div class="reply-box collapsed" id="reply-box">
+                    <div class="reply-resize-handle" id="reply-resize-handle" title="גררו כדי לשנות גובה"></div>
                     <div class="reply-box-header">
                         <button type="button" class="reply-toggle-btn" id="reply-toggle-btn" onclick="toggleReplyBox()">
                             <i class="fa-solid fa-chevron-up" id="reply-toggle-icon"></i> תגובה
                         </button>
                         <div class="reply-box-actions" id="reply-box-actions">
+                            <button type="button" class="reply-size-toggle-btn" id="reply-size-toggle-btn" onclick="toggleReplyBoxSize()" title="הגדל/הקטן תצוגה">
+                                <i class="fa-solid fa-expand" id="reply-size-toggle-icon"></i>
+                            </button>
                             <button class="btn-secondary" onclick="collapseReplyBox()">ביטול</button>
                             <button class="btn-primary" onclick="submitReply()">שלח תגובה</button>
                         </div>
@@ -4812,6 +4866,7 @@
                     ? '<i class="fa-solid fa-ban"></i> לא ניתן להגיב לנושא שנמחק.'
                     : '<i class="fa-solid fa-lock"></i> הכתיבה בנושא זה מוגבלת למשתמשים מורשים בלבד.';
             }
+            syncReplyBoxBottomSpacing();
         }
 
         async function togglePinTopic(topicId) {
@@ -5099,6 +5154,7 @@
             box.classList.remove('collapsed');
             document.getElementById('reply-toggle-icon').className = 'fa-solid fa-chevron-down';
             setTimeout(() => { const el = document.getElementById('reply-input'); if (el) el.focus(); }, 60);
+            syncReplyBoxBottomSpacing();
         }
 
         function collapseReplyBox() {
@@ -5106,6 +5162,91 @@
             if (!box) return;
             box.classList.add('collapsed');
             document.getElementById('reply-toggle-icon').className = 'fa-solid fa-chevron-up';
+            syncReplyBoxBottomSpacing();
+        }
+
+        /* ============ שינוי גובה פס התגובה (גרירה + כפתור הגדלה מהירה) ============ */
+
+        function setReplyComposerHeight(px) {
+            const textarea = document.getElementById('reply-input');
+            const preview = document.getElementById('reply-input-preview');
+            const clamped = Math.max(90, Math.min(px, Math.round(window.innerHeight * 0.68)));
+            if (textarea) textarea.style.height = clamped + 'px';
+            if (preview) preview.style.maxHeight = clamped + 'px';
+            syncReplyBoxBottomSpacing();
+        }
+
+        let replyBoxTall = false;
+        function toggleReplyBoxSize() {
+            replyBoxTall = !replyBoxTall;
+            const icon = document.getElementById('reply-size-toggle-icon');
+            if (replyBoxTall) {
+                setReplyComposerHeight(Math.round(window.innerHeight * 0.55));
+                if (icon) icon.className = 'fa-solid fa-compress';
+            } else {
+                setReplyComposerHeight(96);
+                if (icon) icon.className = 'fa-solid fa-expand';
+            }
+        }
+
+        let replyResizeStartY = 0;
+        let replyResizeStartHeight = 0;
+
+        function startReplyResize(e) {
+            e.preventDefault();
+            const textarea = document.getElementById('reply-input');
+            if (!textarea) return;
+            replyResizeStartY = e.touches ? e.touches[0].clientY : e.clientY;
+            replyResizeStartHeight = textarea.getBoundingClientRect().height;
+            document.body.style.userSelect = 'none';
+            document.addEventListener('mousemove', onReplyResizeMove);
+            document.addEventListener('mouseup', stopReplyResize);
+            document.addEventListener('touchmove', onReplyResizeMove, { passive: false });
+            document.addEventListener('touchend', stopReplyResize);
+        }
+
+        function onReplyResizeMove(e) {
+            if (e.cancelable) e.preventDefault();
+            const y = e.touches ? e.touches[0].clientY : e.clientY;
+            // גרירת הידית כלפי מעלה (Y קטן יותר) צריכה להגביה את הפס - הוא צמוד לתחתית המסך
+            const delta = replyResizeStartY - y;
+            setReplyComposerHeight(replyResizeStartHeight + delta);
+        }
+
+        function stopReplyResize() {
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', onReplyResizeMove);
+            document.removeEventListener('mouseup', stopReplyResize);
+            document.removeEventListener('touchmove', onReplyResizeMove);
+            document.removeEventListener('touchend', stopReplyResize);
+        }
+
+        // מוודא שאפשר לגלול את השרשור עד הסוף גם כשפס התגובה פתוח ותופס חלק ניכר מהמסך,
+        // על ידי התאמת המרווח התחתון של רשימת הפוסטים לגובה הנוכחי בפועל של הפס
+        function syncReplyBoxBottomSpacing() {
+            const box = document.getElementById('reply-box');
+            const postsContainer = document.getElementById('posts-container');
+            if (!box || !postsContainer) return;
+            if (box.classList.contains('collapsed') || box.style.display === 'none') {
+                postsContainer.style.marginBottom = '';
+            } else {
+                const h = box.getBoundingClientRect().height;
+                postsContainer.style.marginBottom = (h + 30) + 'px';
+            }
+        }
+
+        function initReplyBoxResizeSync() {
+            const box = document.getElementById('reply-box');
+            const handle = document.getElementById('reply-resize-handle');
+            if (handle) {
+                handle.addEventListener('mousedown', startReplyResize);
+                handle.addEventListener('touchstart', startReplyResize, { passive: false });
+            }
+            if (box && typeof ResizeObserver !== 'undefined') {
+                const ro = new ResizeObserver(() => syncReplyBoxBottomSpacing());
+                ro.observe(box);
+            }
+            window.addEventListener('resize', syncReplyBoxBottomSpacing);
         }
 
         function startQuoteReply(postId) {
@@ -6097,6 +6238,7 @@
             attachSubmitOnCtrlEnter('new-topic-content', submitNewTopic);
             attachSubmitOnCtrlEnter('reply-input', submitReply);
             attachSubmitOnCtrlEnter('edit-content', saveEdit);
+            initReplyBoxResizeSync();
             fetchPosts();
             startAutoRefresh();
         };
