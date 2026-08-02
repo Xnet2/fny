@@ -940,6 +940,14 @@
             color: var(--text-muted);
             font-size: 13px;
             padding: 16px;
+            position: fixed;
+            left: var(--rail-w);
+            right: var(--rail-w);
+            bottom: 0;
+            background: #ffffff;
+            border-top: 1px solid var(--border-color);
+            box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06);
+            z-index: 250;
         }
 
         .topic-stats {
@@ -1184,12 +1192,14 @@
            במקום להימתח על פני כל רוחב המסך - זה מה שהופך את הטקסט עצמו לגיבור התצוגה,
            ולא הכותרות/כפתורים/מסגרות שסביבו */
         #thread-header,
-        #posts-container,
-        #reply-box,
-        #reply-restricted-notice {
+        #posts-container {
             max-width: 760px;
             margin-left: auto;
             margin-right: auto;
+        }
+
+        #posts-container {
+            margin-bottom: 90px;
         }
 
         .thread-header {
@@ -1473,13 +1483,76 @@
             color: #b91c1c;
         }
 
-        /* תיבת תגובה + סרגל כלים */
+        /* תיבת תגובה + סרגל כלים - פס קבוע לרוחב מלא של המסך בתחתית, בדומה לפורומים כמו NodeBB,
+           שנפתח/נסגר בלחיצה על כפתור "תגובה" במקום להיות משוקע ומצומצם ברוחב בין הפוסטים */
         .reply-box {
+            position: fixed;
+            left: var(--rail-w);
+            right: var(--rail-w);
+            bottom: 0;
             background: #ffffff;
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 25px;
+            border-top: 1px solid var(--border-color);
+            box-shadow: 0 -6px 20px rgba(15, 23, 42, 0.08);
+            z-index: 250;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .reply-box-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            border-bottom: 1px solid transparent;
+        }
+
+        .reply-box:not(.collapsed) .reply-box-header {
+            border-bottom-color: var(--border-color);
+        }
+
+        .reply-toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 9px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .reply-toggle-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .reply-box-actions {
+            display: none;
+            gap: 10px;
+        }
+
+        .reply-box-body {
+            display: none;
+            padding: 4px 20px 20px;
+            overflow-y: auto;
+        }
+
+        .reply-box:not(.collapsed) .reply-box-body {
+            display: block;
+        }
+
+        .reply-box:not(.collapsed) .reply-box-actions {
+            display: flex;
+        }
+
+        @media (max-width: 720px) {
+            .reply-box, .reply-restricted-notice {
+                left: 0;
+                right: 0;
+            }
         }
 
         .reply-quote-preview {
@@ -2389,23 +2462,32 @@
                 <div id="posts-container" class="posts-list"></div>
 
                 <!-- תיבת תגובה -->
-                <div class="reply-box" id="reply-box">
-                    <h3 style="font-size: 16px;">הוספת תגובה</h3>
-                    <div class="reply-quote-preview" id="reply-quote-preview">
-                        <span id="reply-quote-text"></span>
-                        <span class="modal-close" style="font-size:15px;" onclick="cancelQuote()">&times;</span>
-                    </div>
-                    <div class="composer-with-preview">
-                        <div class="composer-editor-col">
-                            <div class="editor-toolbar" id="reply-toolbar"></div>
-                            <textarea id="reply-input" rows="4" placeholder="כתוב את תגובתך כאן... (Ctrl+Enter לשליחה)"></textarea>
-                        </div>
-                        <div class="composer-preview-col">
-                            <div class="composer-preview-label"><i class="fa-solid fa-eye"></i> תצוגה מקדימה</div>
-                            <div class="composer-preview-box post-content" id="reply-input-preview"><span class="composer-preview-placeholder">התצוגה המקדימה תופיע כאן…</span></div>
+                <div class="reply-box collapsed" id="reply-box">
+                    <div class="reply-box-header">
+                        <button type="button" class="reply-toggle-btn" id="reply-toggle-btn" onclick="toggleReplyBox()">
+                            <i class="fa-solid fa-chevron-up" id="reply-toggle-icon"></i> תגובה
+                        </button>
+                        <div class="reply-box-actions" id="reply-box-actions">
+                            <button class="btn-secondary" onclick="collapseReplyBox()">ביטול</button>
+                            <button class="btn-primary" onclick="submitReply()">שלח תגובה</button>
                         </div>
                     </div>
-                    <button class="btn-primary" onclick="submitReply()">שלח תגובה</button>
+                    <div class="reply-box-body" id="reply-box-body">
+                        <div class="reply-quote-preview" id="reply-quote-preview">
+                            <span id="reply-quote-text"></span>
+                            <span class="modal-close" style="font-size:15px;" onclick="cancelQuote()">&times;</span>
+                        </div>
+                        <div class="composer-with-preview">
+                            <div class="composer-editor-col">
+                                <div class="editor-toolbar" id="reply-toolbar"></div>
+                                <textarea id="reply-input" rows="4" placeholder="כתוב את תגובתך כאן... (Ctrl+Enter לשליחה)"></textarea>
+                            </div>
+                            <div class="composer-preview-col">
+                                <div class="composer-preview-label"><i class="fa-solid fa-eye"></i> תצוגה מקדימה</div>
+                                <div class="composer-preview-box post-content" id="reply-input-preview"><span class="composer-preview-placeholder">התצוגה המקדימה תופיע כאן…</span></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="reply-box reply-restricted-notice" id="reply-restricted-notice" style="display:none;">
                     <i class="fa-solid fa-lock"></i> הכתיבה בנושא זה מוגבלת למשתמשים מורשים בלבד.
@@ -4645,6 +4727,7 @@
             renderThreadHeader(posts[0], topicId);
             renderPosts(posts);
             cancelQuote();
+            collapseReplyBox();
             markTopicNotificationsSeen(topicId);
         }
 
@@ -4998,6 +5081,33 @@
 
         /* ============ ציטוט תגובה ============ */
 
+        // פותח/סוגר את פס התגובה לרוחב מלא של המסך
+        function toggleReplyBox() {
+            const box = document.getElementById('reply-box');
+            if (!box) return;
+            if (box.classList.contains('collapsed')) expandReplyBox();
+            else collapseReplyBox();
+        }
+
+        function expandReplyBox() {
+            if (!currentUser) {
+                showToast('יש להתחבר כדי להגיב', 'error');
+                return;
+            }
+            const box = document.getElementById('reply-box');
+            if (!box) return;
+            box.classList.remove('collapsed');
+            document.getElementById('reply-toggle-icon').className = 'fa-solid fa-chevron-down';
+            setTimeout(() => { const el = document.getElementById('reply-input'); if (el) el.focus(); }, 60);
+        }
+
+        function collapseReplyBox() {
+            const box = document.getElementById('reply-box');
+            if (!box) return;
+            box.classList.add('collapsed');
+            document.getElementById('reply-toggle-icon').className = 'fa-solid fa-chevron-up';
+        }
+
         function startQuoteReply(postId) {
             if (!currentUser) {
                 showToast('יש להתחבר כדי להגיב', 'error');
@@ -5009,8 +5119,7 @@
             replyingToQuote = { id: post.id, author: post.author_name, snippet: post.content };
             document.getElementById('reply-quote-preview').style.display = 'flex';
             document.getElementById('reply-quote-text').innerText = `בתגובה ל-@${post.author_name}: ${stripMarkdownForPreview(replyingToQuote.snippet, 150)}`;
-            document.getElementById('reply-input').focus();
-            document.querySelector('.reply-box').scrollIntoView({ behavior: 'smooth', block: 'end' });
+            expandReplyBox();
         }
 
         // מציג תיבת ציטוט עבור טקסט שנבחר (מסומן) בתוך הודעה מסוימת, ולא ההודעה כולה
@@ -5028,8 +5137,7 @@
             if (btn) btn.style.display = 'none';
             const sel = window.getSelection();
             if (sel) sel.removeAllRanges();
-            document.getElementById('reply-input').focus();
-            document.querySelector('.reply-box').scrollIntoView({ behavior: 'smooth', block: 'end' });
+            expandReplyBox();
         }
 
         // מזהה בחירת טקסט בתוך גוף הודעה ומציג כפתור "צטט" צף לידה
@@ -5331,6 +5439,7 @@
             input.value = '';
             updateComposerPreview(input);
             cancelQuote();
+            collapseReplyBox();
 
             // עדכון אופטימי מיידי: התגובה מופיעה על המסך לפני שהשרת אישר שמירה
             allPosts.push(replyPost);
