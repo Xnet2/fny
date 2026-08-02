@@ -1227,20 +1227,14 @@
         .thread-scroller {
             position: fixed;
             top: 50%;
-            right: calc(var(--rail-w) + 10px);
+            left: calc(var(--rail-w) + 10px);
             transform: translateY(-50%);
             z-index: 120;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 4px;
-            opacity: 0.5;
-            transition: opacity 0.2s;
             user-select: none;
-        }
-
-        .thread-scroller:hover {
-            opacity: 1;
         }
 
         .scroller-nav-btn {
@@ -1275,11 +1269,8 @@
         .scroller-thumb {
             position: absolute;
             top: 0;
-            right: 0;
-            display: flex;
-            flex-direction: row-reverse;
-            align-items: center;
-            gap: 8px;
+            left: 0;
+            width: 9px;
             cursor: grab;
         }
 
@@ -1296,20 +1287,21 @@
         }
 
         .scroller-thumb-label {
-            display: none;
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            margin-left: 10px;
+            transform: translateY(-50%);
+            display: flex;
             flex-direction: column;
-            align-items: flex-end;
+            align-items: flex-start;
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             box-shadow: var(--shadow-hover);
             border-radius: 8px;
             padding: 6px 10px;
             white-space: nowrap;
-        }
-
-        .thread-scroller:hover .scroller-thumb-label,
-        .scroller-thumb.dragging .scroller-thumb-label {
-            display: flex;
+            pointer-events: none;
         }
 
         .scroller-thumb-text {
@@ -1326,7 +1318,7 @@
 
         .scroller-unread {
             position: absolute;
-            right: 14px;
+            left: 14px;
             transform: translateY(-50%);
             color: var(--like-color);
             font-size: 11.5px;
@@ -5230,9 +5222,17 @@
             document.getElementById('scroller-top-time').textContent = timeAgo(threadScrollerPosts[0].created_at);
             document.getElementById('scroller-bottom-time').textContent = timeAgo(threadScrollerPosts[total - 1].created_at);
 
-            // בביקור ראשון בנושא מסוימים - לא מסמנים הכל כ"לא נקרא", אלא מתייחסים לביקור הזה כקריאה של הכל עד כה
+            // בביקור ראשון בנושא - לא מסמנים הכל כ"לא נקרא", אלא מתייחסים לביקור הזה כקריאה של הכל עד כה
             if (getThreadReadCount(currentTopicId) === undefined) {
                 setThreadReadCount(currentTopicId, total);
+            } else {
+                // אם ההודעות האחרונות שנוספו הן של המשתמש הנוכחי עצמו (למשל תגובה ששלח הרגע),
+                // הן לא אמורות להיספר כ"לא נקראו" - הוא זה שכתב אותן
+                let readCount = getThreadReadCount(currentTopicId);
+                while (readCount < total && currentUser && threadScrollerPosts[readCount].author_email === currentUser.email) {
+                    readCount++;
+                }
+                setThreadReadCount(currentTopicId, readCount);
             }
 
             updateThreadScrollerFromScroll();
@@ -5333,7 +5333,10 @@
             const index = scrollerIndexFromClientY(clientY);
             positionScrollerThumb(index);
             const el = document.getElementById('post-card-' + threadScrollerPosts[index].id);
-            if (el) el.scrollIntoView({ behavior: 'auto', block: 'center' });
+            if (el) {
+                const targetY = window.scrollY + el.getBoundingClientRect().top - 110;
+                window.scrollTo({ top: Math.max(targetY, 0), behavior: 'auto' });
+            }
         }
 
         function scrollerStartDrag(clientY) {
