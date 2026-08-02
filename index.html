@@ -537,6 +537,161 @@
             font-size: 14px;
         }
 
+        /* עמוד הרשמה/התחברות (/login) */
+        .login-card {
+            max-width: 460px;
+            margin: 20px auto 40px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 32px 28px;
+            box-shadow: var(--shadow-hover);
+            text-align: center;
+        }
+
+        .login-card-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 14px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--brand-a), var(--brand-b));
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(3, 105, 161, 0.3);
+        }
+
+        .login-card h2 {
+            font-size: 20px;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .login-card-sub {
+            font-size: 13.5px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 22px;
+        }
+
+        .login-guidelines {
+            text-align: right;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 22px;
+        }
+
+        .login-guidelines h4 {
+            font-size: 13.5px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .login-guidelines h4 i {
+            color: var(--primary);
+        }
+
+        .login-guidelines ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .login-guidelines li {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            padding-right: 16px;
+            position: relative;
+        }
+
+        .login-guidelines li::before {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 6px;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--primary);
+        }
+
+        .login-field {
+            text-align: right;
+            margin-bottom: 16px;
+        }
+
+        .login-field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+
+        .login-field input {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .login-field input:focus {
+            border-color: var(--primary);
+        }
+
+        .login-checkbox-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            text-align: right;
+            cursor: pointer;
+            margin-bottom: 24px;
+        }
+
+        .login-checkbox-row input {
+            width: 17px;
+            height: 17px;
+            margin-top: 2px;
+            flex-shrink: 0;
+            accent-color: var(--primary);
+        }
+
+        .login-checkbox-row span {
+            font-size: 13px;
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        .login-google-wrap {
+            display: flex;
+            justify-content: center;
+        }
+
+        .login-google-placeholder {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            color: var(--text-muted);
+            font-size: 13px;
+            border: 1px dashed var(--border-color);
+        }
+
         /* כפתורים */
         .btn-primary {
             background: var(--primary);
@@ -2052,12 +2207,8 @@
                 </div>
             </div>
             <div class="user-section">
-                <div id="g_id_onload"
-                    data-client_id="426523025549-7c50rkn7cun4vmm2r802u0ij6egjehtg.apps.googleusercontent.com"
-                    data-callback="handleCredentialResponse">
-                </div>
                 <div id="google-btn-container">
-                    <div class="g_id_signin" data-type="standard"></div>
+                    <button class="btn-primary" onclick="openLoginView()"><i class="fa-brands fa-google"></i> התחברות</button>
                 </div>
             </div>
         </header>
@@ -2213,35 +2364,46 @@
                 </div>
             </div>
 
+            <!-- עמוד הרשמה/התחברות -->
+            <div id="login-view" class="thread-view">
+                <div class="login-card">
+                    <div class="login-card-icon"><i class="fa-solid fa-people-group"></i></div>
+                    <h2>הצטרפות לפורום נווה יעקב</h2>
+                    <p class="login-card-sub">הפורום מיועד לתושבי ותושבות שכונת נווה יעקב. לפני ההתחברות, נבקש כמה פרטים ואישור קצר.</p>
+
+                    <div class="login-guidelines">
+                        <h4><i class="fa-solid fa-shield-halved"></i> כללי שימוש הולם</h4>
+                        <ul>
+                            <li>יש לנהוג בכבוד כלפי חברי וחברות הקהילה, גם במחלוקת.</li>
+                            <li>אין לפרסם תוכן פוגעני, מטעה, מסחרי לא מורשה או פרטי מידע אישי של אחרים.</li>
+                            <li>הפורום מיועד לתושבי השכונה - הכתובת המוזנת משמשת לאימות זה בלבד.</li>
+                            <li>המנהלים רשאים להסיר תוכן או לחסום משתמשים שמפרים את הכללים.</li>
+                        </ul>
+                    </div>
+
+                    <div class="login-field">
+                        <label for="login-address">כתובת מגורים בנווה יעקב</label>
+                        <input type="text" id="login-address" placeholder="לדוגמה: רחוב הדגן 12" oninput="updateLoginGoogleButton()">
+                    </div>
+
+                    <label class="login-checkbox-row">
+                        <input type="checkbox" id="login-confirm" onchange="updateLoginGoogleButton()">
+                        <span>אני מצהיר/ה ומתחייב/ת שאני מתגורר/ת בשכונת נווה יעקב, ומסכים/ה לשימוש הולם בפורום בהתאם לכללים שלעיל</span>
+                    </label>
+
+                    <div class="login-google-wrap">
+                        <div id="login-google-btn" style="display:none;"></div>
+                        <div id="login-google-placeholder" class="login-google-placeholder">
+                            <i class="fa-solid fa-lock"></i> מלאו את הפרטים למעלה כדי להמשיך עם Google
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
     <!-- מודאל יצירת נושא חדש -->
-    <!-- מודאל השלמת הרשמה (חובה, ללא אפשרות סגירה) -->
-    <div id="registration-modal" class="modal-overlay">
-        <div class="modal" style="max-width: 420px;">
-            <div class="modal-header">
-                <h3>השלמת הרשמה לפורום</h3>
-            </div>
-            <div>
-                <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 16px;">
-                    כדי להשתתף בפורום נווה יעקב, יש להזין את כתובת המגורים שלך ולאשר שאת/ה מתגורר/ת בשכונה.
-                </p>
-                <label>כתובת מגורים:</label>
-                <input type="text" id="reg-address" placeholder="לדוגמה: רחוב הדגן 12, נווה יעקב">
-
-                <label style="display:flex; align-items:center; gap:8px; margin-top:16px; cursor:pointer;">
-                    <input type="checkbox" id="reg-confirm" style="width:16px; height:16px; margin:0;">
-                    <span style="font-size: 13.5px;">אני מצהיר/ה ומתחייב/ת שאני מתגורר/ת בשכונת נווה יעקב</span>
-                </label>
-
-                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-                    <button class="btn-primary" onclick="submitRegistration()">המשך לפורום</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div id="topic-modal" class="modal-overlay">
         <div class="modal">
             <div class="modal-header">
@@ -2370,6 +2532,7 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbx6TbORKoj_XXmOnbigtFQGc8Dmt94acTbOdb5pnEZ9YfYVlQJ2CeFrfFqb8GzGXEaD/exec";
         const USERS_API_URL = "https://script.google.com/macros/s/AKfycby3d8oHPH-A3nZLfFlAnkegoYmBGPOtzoMEDrwgtYAacK7VjwLLHa_TZDaVjnsdb2k_iA/exec";
         const ADMIN_EMAIL = "dh058328@gmail.com";
+        const GOOGLE_CLIENT_ID = "426523025549-7c50rkn7cun4vmm2r802u0ij6egjehtg.apps.googleusercontent.com";
         const CATEGORY_PREFIX = 'cat_';
         const DEFAULT_ICON = 'fa-comments';
         const CACHE_KEY = 'forum_data_cache_v1';
@@ -2377,7 +2540,7 @@
         /* ============ ניתוב לפי נתיב (path) - קישורים יפים ============ */
 
         // סוגי הנתיבים שהאתר מכיר - משמש גם לזיהוי איפה מסתיימת "תיקיית הבסיס" של האתר בכתובת
-        const ROUTE_TYPES = ['topic', 'post', 'category', 'user', 'tag', 'tags', 'users', 'latest', 'popular'];
+        const ROUTE_TYPES = ['topic', 'post', 'category', 'user', 'tag', 'tags', 'users', 'latest', 'popular', 'login'];
 
         // מחשבים פעם אחת בטעינה את "תיקיית הבסיס" של האתר (למשל /fny/), כדי שהניתוב יעבוד
         // גם ב-GitHub Pages (תחת /fny/) וגם בהרצה מקומית מנתיב אחר
@@ -2492,6 +2655,8 @@
                 openTagsView(true);
             } else if (type === 'tag' && id) {
                 openTagView(decodeURIComponent(id), true);
+            } else if (type === 'login') {
+                openLoginView(true);
             } else {
                 showHome();
             }
@@ -3227,7 +3392,7 @@
                 localStorage.setItem('forum_user', JSON.stringify(currentUser));
                 updateUserUI();
                 fetchPosts();
-                checkAndShowRegistration();
+                completeLoginRegistration();
             }
         }
 
@@ -3289,10 +3454,9 @@
 
             // אם כבר ידוע (מפעם קודמת שנשמרה מקומית) שהמשתמש רשום ואישר -
             // לא מחכים לשרת כדי להציג את הפעמון/התראות, מציגים מיד ומוודאים ברקע.
-            // זה גם פותר את העיכוב בטעינת הפעמון וגם מונע הבהוב של חלון ההרשמה.
+            // זה גם פותר את העיכוב בטעינת הפעמון וגם מונע הבהוב של עמוד ההרשמה.
             const knownRegistered = !!(currentUser.registered && currentUser.address);
             if (knownRegistered) {
-                document.getElementById('registration-modal').style.display = 'none';
                 Promise.all([loadUserFollows(), loadNotifications()]).then(startNotifPolling);
             }
 
@@ -3302,15 +3466,10 @@
                 const confirmed = user && user.address && isConfirmedFlag(user.confirmed_neve_yaakov);
                 if (!confirmed) {
                     // אם ידענו שהוא רשום מקומית אבל השרת לא מאשר - לא מציקים לו שוב על הסמך
-                    // תשובת שרת חד-פעמית; רק אם גם מקומית וגם בשרת אין רישום מבקשים הרשמה.
-                    if (!knownRegistered) {
-                        document.getElementById('reg-address').value = (user && user.address) || '';
-                        document.getElementById('reg-confirm').checked = false;
-                        document.getElementById('registration-modal').style.display = 'flex';
-                    }
+                    // תשובת שרת חד-פעמית; רק אם גם מקומית וגם בשרת אין רישום מפנים להרשמה.
+                    if (!knownRegistered) openLoginView();
                     return;
                 }
-                document.getElementById('registration-modal').style.display = 'none';
                 currentUser.address = user.address;
                 currentUser.registered = true;
                 localStorage.setItem('forum_user', JSON.stringify(currentUser));
@@ -3320,23 +3479,66 @@
                 }
             } catch (e) {
                 // אם השרת לא זמין - לא חוסמים את המשתמש מהפורום
-                if (!knownRegistered) {
-                    document.getElementById('registration-modal').style.display = 'none';
-                }
             }
         }
 
-        async function submitRegistration() {
-            const address = document.getElementById('reg-address').value.trim();
-            const confirmed = document.getElementById('reg-confirm').checked;
-            if (!address) {
-                showToast('נא להזין כתובת מגורים', 'error');
+        /* ============ עמוד הרשמה/התחברות (/login) ============ */
+
+        let googleIdInitialized = false;
+
+        // מאתחלים את ספריית ה-Sign-In של גוגל פעם אחת (עצלני - רק כשבאמת צריך לרנדר כפתור)
+        function ensureGoogleIdInitialized() {
+            if (googleIdInitialized) return true;
+            if (!window.google || !google.accounts || !google.accounts.id) return false;
+            google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleCredentialResponse });
+            googleIdInitialized = true;
+            return true;
+        }
+
+        // כפתור ה-Google מתגלה רק אחרי שממלאים כתובת ומסמנים את תיבת ההתחייבות -
+        // כך שהפרטים נאספים *לפני* ההתחברות, לא אחריה
+        function updateLoginGoogleButton() {
+            const address = document.getElementById('login-address').value.trim();
+            const confirmed = document.getElementById('login-confirm').checked;
+            const btnContainer = document.getElementById('login-google-btn');
+            const placeholder = document.getElementById('login-google-placeholder');
+            if (!address || !confirmed) {
+                placeholder.style.display = 'flex';
+                placeholder.innerHTML = '<i class="fa-solid fa-lock"></i> מלאו את הפרטים למעלה כדי להמשיך עם Google';
+                btnContainer.style.display = 'none';
                 return;
             }
-            if (!confirmed) {
-                showToast('יש לאשר שאת/ה מתגורר/ת בנווה יעקב כדי להמשיך', 'error');
+            if (!ensureGoogleIdInitialized()) {
+                // ספריית ה-Sign-In של גוגל עוד לא נטענה - מנסים שוב בעוד רגע
+                placeholder.style.display = 'flex';
+                placeholder.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> טוען...';
+                btnContainer.style.display = 'none';
+                setTimeout(updateLoginGoogleButton, 300);
                 return;
             }
+            placeholder.style.display = 'none';
+            btnContainer.style.display = 'block';
+            btnContainer.innerHTML = '';
+            google.accounts.id.renderButton(btnContainer, { theme: 'outline', size: 'large', text: 'continue_with', shape: 'pill', width: 320 });
+        }
+
+        function openLoginView(fromHash) {
+            if (currentUser) { showHome(); return; }
+            hideAllViews();
+            document.getElementById('login-view').style.display = 'block';
+            setActiveNav(null);
+            closeSidebarPanel();
+            if (!fromHash) navigate('/login');
+            ensureGoogleIdInitialized();
+            updateLoginGoogleButton();
+        }
+
+        // נקראת אחרי שגוגל מחזירה credential שהתקבל דרך עמוד ה-login - שולחת
+        // לשרת את הכתובת + האישור שכבר מולאו מראש, ומשלימה את ההרשמה
+        async function completeLoginRegistration() {
+            const address = document.getElementById('login-address').value.trim();
+            const confirmed = document.getElementById('login-confirm').checked;
+            if (!address || !confirmed) { showHome(); return; }
             try {
                 await fetch(USERS_API_URL, {
                     method: 'POST',
@@ -3356,13 +3558,13 @@
                 currentUser.address = address;
                 currentUser.registered = true;
                 localStorage.setItem('forum_user', JSON.stringify(currentUser));
-                document.getElementById('registration-modal').style.display = 'none';
-                showToast('ההרשמה הושלמה בהצלחה', 'success');
+                showToast('ההרשמה הושלמה בהצלחה, ברוך/ה הבא/ה!', 'success');
                 await Promise.all([loadUserFollows(), loadNotifications()]);
                 startNotifPolling();
             } catch (e) {
                 showToast('שגיאה בשמירת ההרשמה, נסו שוב', 'error');
             }
+            showHome();
         }
 
         /* ============ עוקבים (Follows) ============ */
@@ -4089,7 +4291,7 @@
         /* ============ תצוגת נושא בודד ============ */
 
         // כל התצוגות הראשיות של העמוד - שימוש מרכזי אחד כדי שלא נשכח תצוגה כשמוסיפים חדשה
-        const VIEW_IDS = ['home-view', 'thread-view', 'category-view', 'profile-view', 'latest-view', 'popular-view', 'users-view', 'tags-view', 'tag-view'];
+        const VIEW_IDS = ['home-view', 'thread-view', 'category-view', 'profile-view', 'latest-view', 'popular-view', 'users-view', 'tags-view', 'tag-view', 'login-view'];
         function hideAllViews() {
             VIEW_IDS.forEach(id => {
                 const el = document.getElementById(id);
@@ -5370,7 +5572,7 @@
         let refreshInFlight = false;
 
         function isAnyModalOpen() {
-            return ['topic-modal', 'category-modal', 'edit-modal', 'confirm-modal', 'user-edit-modal', 'registration-modal', 'search-modal'].some(id => {
+            return ['topic-modal', 'category-modal', 'edit-modal', 'confirm-modal', 'user-edit-modal', 'search-modal'].some(id => {
                 const el = document.getElementById(id);
                 return el && el.style.display === 'flex';
             });
