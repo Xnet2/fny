@@ -1599,6 +1599,113 @@
             margin: 4px 4px;
         }
 
+        /* תצוגה מקדימה חיה לצד עורך הטקסט */
+        .composer-with-preview {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            align-items: start;
+        }
+
+        .composer-editor-col textarea {
+            margin-top: 0;
+        }
+
+        .composer-preview-col {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fbfcfe;
+            height: 100%;
+        }
+
+        .composer-preview-label {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: #f1f5f9;
+            padding: 7px 10px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .composer-preview-box {
+            padding: 10px 12px;
+            font-size: 13.5px;
+            line-height: 1.6;
+            overflow-y: auto;
+            flex: 1;
+            min-height: 90px;
+            max-height: 260px;
+            word-break: break-word;
+        }
+
+        .composer-preview-placeholder {
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        @media (max-width: 720px) {
+            .composer-with-preview {
+                grid-template-columns: 1fr;
+            }
+            .composer-preview-col {
+                max-height: 160px;
+            }
+        }
+
+        /* בוחר אימוג'ים */
+        .emoji-picker {
+            display: none;
+            position: fixed;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
+            z-index: 700;
+            padding: 8px;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            width: 238px;
+        }
+
+        .emoji-picker.open {
+            display: grid;
+        }
+
+        .emoji-picker button {
+            width: 30px;
+            height: 30px;
+            border: none;
+            background: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 17px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .emoji-picker button:hover {
+            background: #f1f5f9;
+        }
+
+        /* תג מוניטין */
+        .reputation-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: #b45309;
+        }
+
+        .reputation-badge i {
+            color: #f59e0b;
+        }
+
         .reply-box textarea, .modal input, .modal textarea, .modal select, .edit-modal textarea {
             width: 100%;
             padding: 12px;
@@ -2288,8 +2395,16 @@
                         <span id="reply-quote-text"></span>
                         <span class="modal-close" style="font-size:15px;" onclick="cancelQuote()">&times;</span>
                     </div>
-                    <div class="editor-toolbar" id="reply-toolbar"></div>
-                    <textarea id="reply-input" rows="4" placeholder="כתוב את תגובתך כאן..."></textarea>
+                    <div class="composer-with-preview">
+                        <div class="composer-editor-col">
+                            <div class="editor-toolbar" id="reply-toolbar"></div>
+                            <textarea id="reply-input" rows="4" placeholder="כתוב את תגובתך כאן... (Ctrl+Enter לשליחה)"></textarea>
+                        </div>
+                        <div class="composer-preview-col">
+                            <div class="composer-preview-label"><i class="fa-solid fa-eye"></i> תצוגה מקדימה</div>
+                            <div class="composer-preview-box post-content" id="reply-input-preview"><span class="composer-preview-placeholder">התצוגה המקדימה תופיע כאן…</span></div>
+                        </div>
+                    </div>
                     <button class="btn-primary" onclick="submitReply()">שלח תגובה</button>
                 </div>
                 <div class="reply-box reply-restricted-notice" id="reply-restricted-notice" style="display:none;">
@@ -2350,6 +2465,7 @@
                     </div>
                     <div class="users-sort-tabs">
                         <button id="users-sort-posts" class="active" onclick="setUsersSort('posts')">מפרסמים הכי הרבה</button>
+                        <button id="users-sort-reputation" onclick="setUsersSort('reputation')">מוניטין</button>
                         <button id="users-sort-name" onclick="setUsersSort('name')">לפי שם</button>
                     </div>
                 </div>
@@ -2441,8 +2557,16 @@
                 <input type="text" id="new-topic-tags" placeholder="לדוגמה: עזרה, דחוף, שאלה">
 
                 <label>תוכן ההודעה:</label>
-                <div class="editor-toolbar" id="new-topic-toolbar"></div>
-                <textarea id="new-topic-content" rows="6" placeholder="פרט את נושא הדיון..." style="border-radius:0 0 8px 8px; margin-top:0;"></textarea>
+                <div class="composer-with-preview">
+                    <div class="composer-editor-col">
+                        <div class="editor-toolbar" id="new-topic-toolbar"></div>
+                        <textarea id="new-topic-content" rows="6" placeholder="פרט את נושא הדיון... (Ctrl+Enter לשליחה)" style="border-radius:0 0 8px 8px; margin-top:0;"></textarea>
+                    </div>
+                    <div class="composer-preview-col">
+                        <div class="composer-preview-label"><i class="fa-solid fa-eye"></i> תצוגה מקדימה</div>
+                        <div class="composer-preview-box post-content" id="new-topic-content-preview"><span class="composer-preview-placeholder">התצוגה המקדימה תופיע כאן…</span></div>
+                    </div>
+                </div>
 
                 <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
                     <button class="btn-secondary" onclick="closeModal()">ביטול</button>
@@ -2515,8 +2639,16 @@
                 <span class="modal-close" onclick="closeEditModal()">&times;</span>
             </div>
             <div>
-                <div class="editor-toolbar" id="edit-toolbar"></div>
-                <textarea id="edit-content" rows="7" style="border-radius:0 0 8px 8px; margin-top:0;"></textarea>
+                <div class="composer-with-preview">
+                    <div class="composer-editor-col">
+                        <div class="editor-toolbar" id="edit-toolbar"></div>
+                        <textarea id="edit-content" rows="7" placeholder="Ctrl+Enter לשמירה" style="border-radius:0 0 8px 8px; margin-top:0;"></textarea>
+                    </div>
+                    <div class="composer-preview-col">
+                        <div class="composer-preview-label"><i class="fa-solid fa-eye"></i> תצוגה מקדימה</div>
+                        <div class="composer-preview-box post-content" id="edit-content-preview"><span class="composer-preview-placeholder">התצוגה המקדימה תופיע כאן…</span></div>
+                    </div>
+                </div>
                 <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
                     <button class="btn-secondary" onclick="closeEditModal()">ביטול</button>
                     <button class="btn-primary" onclick="saveEdit()">שמור שינויים</button>
@@ -2543,6 +2675,9 @@
     <button type="button" class="selection-quote-btn" id="selection-quote-btn">
         <i class="fa-solid fa-quote-right"></i> צטט
     </button>
+
+    <!-- בוחר אימוג'ים צף -->
+    <div class="emoji-picker" id="emoji-picker"></div>
 
     <!-- טוסטים -->
     <div class="toast-container" id="toast-container"></div>
@@ -2808,6 +2943,50 @@
         let locallySeenNotifIds = new Set(); // מזהי התראות שסומנו כ"נצפו" מקומית (נקראה ההודעה עצמה), מאותה סיבה
         let pendingGoogleProfile = null; // פרופיל גוגל שממתין להשלמת הרשמה
 
+        /* ============ סימון התראות בכרטיסיית הדפדפן (כותרת + פאביקון) ============ */
+
+        const ORIGINAL_TAB_TITLE = document.title;
+        const BASE_FAVICON_HREF = document.querySelector('link[rel="icon"]').href;
+        let baseFaviconImg = null;
+
+        function updateTabBadge(count) {
+            document.title = count > 0 ? `(${count > 99 ? '99+' : count}) ${ORIGINAL_TAB_TITLE}` : ORIGINAL_TAB_TITLE;
+            if (baseFaviconImg) {
+                drawFaviconBadge(count);
+            } else {
+                const img = new Image();
+                img.onload = () => { baseFaviconImg = img; drawFaviconBadge(count); };
+                img.src = BASE_FAVICON_HREF;
+            }
+        }
+
+        // מצייר מעל הפאביקון המקורי עיגול אדום עם מספר ההתראות שלא נקראו
+        function drawFaviconBadge(count) {
+            const link = document.querySelector('link[rel="icon"]');
+            if (!link || !baseFaviconImg) return;
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(baseFaviconImg, 0, 0, 64, 64);
+            if (count > 0) {
+                ctx.beginPath();
+                ctx.arc(48, 16, 15, 0, Math.PI * 2);
+                ctx.fillStyle = '#ef4444';
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 20px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(count > 9 ? '9+' : String(count), 48, 17);
+            }
+            link.href = canvas.toDataURL('image/png');
+        }
+
+
         /* ============ עזר: משתמשים ============ */
 
         // מייצר מזהה יציב (לא הפיך) למשתמש מתוך המייל שלו, כדי לא לחשוף מיילים בקישורים
@@ -2915,11 +3094,20 @@
                 if (!p.author_email) return;
                 const uid = userIdFromEmail(p.author_email);
                 if (!map[uid]) {
-                    map[uid] = { uid, name: p.author_name, avatar: p.author_avatar, email: p.author_email, count: 0 };
+                    map[uid] = { uid, name: p.author_name, avatar: p.author_avatar, email: p.author_email, count: 0, reputation: 0 };
                 }
                 map[uid].count++;
+                if (!isPostDeleted(p)) map[uid].reputation += num(p.likes);
             });
             return Object.values(map);
+        }
+
+        // מוניטין של משתמש = סכום כל הלייקים שקיבל על כל ההודעות שכתב (לא כולל הודעות שנמחקו)
+        function getUserReputation(email) {
+            if (!email) return 0;
+            return allPosts
+                .filter(p => p.author_email === email && !isPostDeleted(p))
+                .reduce((sum, p) => sum + num(p.likes), 0);
         }
 
         /* ============ עזר: טקסט ============ */
@@ -3066,12 +3254,14 @@
             { sep: true },
             { icon: 'fa-link', title: 'קישור', action: (v) => wrap(v, '[', '](https://)') },
             { icon: 'fa-image', title: 'תמונה', action: (v) => triggerImageUpload(v) },
-            { icon: 'fa-face-smile', title: 'אימוג\'י', action: (v) => insertEmoji(v) },
+            { icon: 'fa-face-smile', title: 'אימוג\'י', action: (v, ev) => toggleEmojiPicker(ev, v) },
             { sep: true },
             { icon: 'fa-expand', title: 'הרחבה', action: (v) => toggleExpand(v) }
         ];
 
-        const EMOJIS = ['😀','😂','😍','👍','🙏','🎉','😢','😮','❤️','🔥'];
+        const EMOJIS = ['😀','😂','😅','😊','😍','😘','🥳','😎','🤔','😐','🙄','😴',
+            '😢','😭','😡','😱','😷','🤒','👍','👎','🙏','👏','💪','🤝',
+            '🔥','🎉','⭐','✅','❌','⚠️','❤️','💔','😇','🤗','👋','🎂'];
 
         function buildToolbar(containerId, textareaId) {
             const container = document.getElementById(containerId);
@@ -3087,7 +3277,7 @@
                 b.type = 'button';
                 b.title = btn.title;
                 b.innerHTML = `<i class="fa-solid ${btn.icon}"></i>`;
-                b.onclick = () => btn.action(document.getElementById(textareaId));
+                b.onclick = (ev) => btn.action(document.getElementById(textareaId), ev);
                 container.appendChild(b);
             });
         }
@@ -3100,6 +3290,7 @@
             textarea.focus();
             textarea.selectionStart = start + before.length;
             textarea.selectionEnd = start + before.length + selected.length;
+            updateComposerPreview(textarea);
         }
 
         function linePrefix(textarea, prefix) {
@@ -3109,13 +3300,92 @@
             textarea.value = val.substring(0, lineStart) + prefix + val.substring(lineStart);
             textarea.focus();
             textarea.selectionStart = textarea.selectionEnd = start + prefix.length;
+            updateComposerPreview(textarea);
         }
 
-        function insertEmoji(textarea) {
-            const emoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+        let emojiPickerTargetTextarea = null;
+
+        // פותח/סוגר את בוחר האימוג'ים הצף ליד הכפתור שנלחץ, ומאכלס אותו באימוג'ים לבחירה
+        function toggleEmojiPicker(ev, textarea) {
+            const picker = document.getElementById('emoji-picker');
+            if (!picker) return;
+
+            // לחיצה חוזרת על אותו כפתור סוגרת את הבוחר
+            if (picker.classList.contains('open') && emojiPickerTargetTextarea === textarea) {
+                closeEmojiPicker();
+                return;
+            }
+
+            emojiPickerTargetTextarea = textarea;
+            picker.innerHTML = EMOJIS.map(e => `<button type="button" onmousedown="event.preventDefault(); insertEmoji('${e}')">${e}</button>`).join('');
+
+            const btn = ev && ev.currentTarget;
+            const rect = btn ? btn.getBoundingClientRect() : { left: 20, bottom: 20, right: 20 };
+            picker.classList.add('open');
+            const pickerWidth = 238;
+            let left = rect.left;
+            if (left + pickerWidth > window.innerWidth - 10) left = window.innerWidth - pickerWidth - 10;
+            if (left < 10) left = 10;
+            picker.style.left = left + 'px';
+            picker.style.top = (rect.bottom + 6) + 'px';
+        }
+
+        function closeEmojiPicker() {
+            const picker = document.getElementById('emoji-picker');
+            if (picker) picker.classList.remove('open');
+            emojiPickerTargetTextarea = null;
+        }
+
+        // מכניס את האימוג'י שנבחר בפועל למקום הסמן בתיבת הטקסט
+        function insertEmoji(emoji) {
+            const textarea = emojiPickerTargetTextarea;
+            closeEmojiPicker();
+            if (!textarea) return;
             const start = textarea.selectionStart;
-            textarea.value = textarea.value.substring(0, start) + emoji + textarea.value.substring(start);
+            const end = textarea.selectionEnd;
+            textarea.value = textarea.value.substring(0, start) + emoji + textarea.value.substring(end);
             textarea.focus();
+            textarea.selectionStart = textarea.selectionEnd = start + emoji.length;
+            updateComposerPreview(textarea);
+        }
+
+        document.addEventListener('mousedown', (e) => {
+            const picker = document.getElementById('emoji-picker');
+            if (!picker || !picker.classList.contains('open')) return;
+            if (e.target.closest && (e.target.closest('#emoji-picker') || e.target.closest('.editor-toolbar'))) return;
+            closeEmojiPicker();
+        });
+
+        /* ============ תצוגה מקדימה חיה בזמן כתיבה ============ */
+
+        // מרענן את תיבת התצוגה המקדימה הצמודה לפי תוכן ה-textarea הנוכחי
+        function updateComposerPreview(textarea) {
+            if (!textarea) return;
+            const preview = document.getElementById(textarea.id + '-preview');
+            if (!preview) return;
+            const val = textarea.value;
+            preview.innerHTML = val.trim()
+                ? renderContent(val)
+                : '<span class="composer-preview-placeholder">התצוגה המקדימה תופיע כאן…</span>';
+        }
+
+        // מחבר בין הקלדה בתיבת טקסט לבין עדכון אוטומטי של התצוגה המקדימה שלה
+        function attachLivePreview(textareaId) {
+            const textarea = document.getElementById(textareaId);
+            if (!textarea) return;
+            textarea.addEventListener('input', () => updateComposerPreview(textarea));
+        }
+
+        // מאפשר שליחה מהירה של הפוסט/תגובה בלחיצה על Ctrl+Enter (או Cmd+Enter במק)
+        function attachSubmitOnCtrlEnter(textareaId, submitFn) {
+            const textarea = document.getElementById(textareaId);
+            if (!textarea) return;
+            textarea.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    submitFn();
+                }
+            });
         }
 
         function toggleExpand(textarea) {
@@ -3154,6 +3424,7 @@
             const start = textarea.selectionStart;
             const placeholder = `![מעלה תמונה...]()`;
             textarea.value = textarea.value.substring(0, start) + placeholder + textarea.value.substring(start);
+            updateComposerPreview(textarea);
 
             showToast('מעלה תמונה...', 'info');
 
@@ -3168,9 +3439,11 @@
                     throw new Error((data.error && data.error.message) || 'שגיאה בהעלאה');
                 }
                 textarea.value = textarea.value.replace(placeholder, `![תמונה](${data.secure_url})`);
+                updateComposerPreview(textarea);
                 showToast('התמונה הועלתה בהצלחה', 'success');
             } catch (err) {
                 textarea.value = textarea.value.replace(placeholder, '');
+                updateComposerPreview(textarea);
                 showToast('שגיאה בהעלאת התמונה', 'error');
             }
             textarea.focus();
@@ -3336,6 +3609,7 @@
             textarea.focus();
             textarea.selectionStart = textarea.selectionEnd = newPos;
             closeMentionDropdown();
+            updateComposerPreview(textarea);
         }
 
         function closeMentionDropdown() {
@@ -3729,18 +4003,21 @@
             if (bellContainer) bellContainer.style.display = 'none';
             const dropdown = document.getElementById('notif-dropdown');
             if (dropdown) dropdown.classList.remove('open');
+            updateTabBadge(0);
         }
 
         function renderNotifBell() {
             const unreadCount = notifications.filter(isNotifUnread).length;
             const badge = document.getElementById('notif-badge');
-            if (!badge) return;
-            if (unreadCount > 0) {
-                badge.style.display = 'flex';
-                badge.innerText = unreadCount > 99 ? '99+' : unreadCount;
-            } else {
-                badge.style.display = 'none';
+            if (badge) {
+                if (unreadCount > 0) {
+                    badge.style.display = 'flex';
+                    badge.innerText = unreadCount > 99 ? '99+' : unreadCount;
+                } else {
+                    badge.style.display = 'none';
+                }
             }
+            updateTabBadge(unreadCount);
         }
 
         function renderNotifDropdown() {
@@ -4829,6 +5106,7 @@
             document.getElementById('new-topic-title').value = '';
             document.getElementById('new-topic-tags').value = '';
             document.getElementById('new-topic-content').value = '';
+            updateComposerPreview(document.getElementById('new-topic-content'));
             populateCategorySelect(preselectCategoryId || currentCategoryId);
             document.getElementById('topic-modal').style.display = 'flex';
         }
@@ -4847,6 +5125,7 @@
             document.getElementById('new-topic-title').value = mainPost.title || '';
             document.getElementById('new-topic-tags').value = mainPost.tags || '';
             document.getElementById('new-topic-content').value = mainPost.content || '';
+            updateComposerPreview(document.getElementById('new-topic-content'));
             populateCategorySelect(mainPost.category);
             document.getElementById('topic-modal').style.display = 'flex';
         }
@@ -4929,6 +5208,7 @@
             document.getElementById('new-topic-title').value = '';
             document.getElementById('new-topic-tags').value = '';
             document.getElementById('new-topic-content').value = '';
+            updateComposerPreview(document.getElementById('new-topic-content'));
 
             // עדכון אופטימי מיידי: מוסיפים את הנושא לרשימה המקומית ומנווטים אליו מיד,
             // בלי לחכות לתשובת השרת
@@ -5049,6 +5329,7 @@
             };
 
             input.value = '';
+            updateComposerPreview(input);
             cancelQuote();
 
             // עדכון אופטימי מיידי: התגובה מופיעה על המסך לפני שהשרת אישר שמירה
@@ -5088,6 +5369,7 @@
             if (!post) return;
             editingPostId = id;
             document.getElementById('edit-content').value = post.content;
+            updateComposerPreview(document.getElementById('edit-content'));
             document.getElementById('edit-modal').style.display = 'flex';
         }
 
@@ -5264,6 +5546,7 @@
         function setUsersSort(mode) {
             usersSortMode = mode;
             document.getElementById('users-sort-posts').classList.toggle('active', mode === 'posts');
+            document.getElementById('users-sort-reputation').classList.toggle('active', mode === 'reputation');
             document.getElementById('users-sort-name').classList.toggle('active', mode === 'name');
             renderUsersGrid();
         }
@@ -5293,6 +5576,8 @@
 
             if (usersSortMode === 'name') {
                 users.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+            } else if (usersSortMode === 'reputation') {
+                users.sort((a, b) => b.reputation - a.reputation);
             } else {
                 users.sort((a, b) => b.count - a.count);
             }
@@ -5318,7 +5603,7 @@
                     <div class="user-card-info">
                         <div class="user-card-name">${escapeHtml(u.name)}</div>
                         <div class="user-card-handle">@${escapeHtml((u.name || '').replace(/\s+/g, ''))}</div>
-                        <div class="user-card-time">${u.count} הודעות</div>
+                        <div class="user-card-time">${u.count} הודעות &middot; <span class="reputation-badge"><i class="fa-solid fa-star"></i> ${u.reputation}</span></div>
                     </div>
                 `;
                 container.appendChild(card);
@@ -5541,6 +5826,7 @@
                 .filter(p => !isPostDeleted(p) || canSeeDeletedPost(p));
             const topicsStarted = userPosts.filter(p => p.title).length;
             const isAdmin = user.email === ADMIN_EMAIL;
+            const reputation = getUserReputation(user.email);
 
             document.getElementById('profile-header').innerHTML = `
                 ${avatarHtml(user.name, user.email, user.avatar, 72)}
@@ -5549,6 +5835,7 @@
                     <div class="profile-stats">
                         <span><i class="fa-solid fa-comment-dots"></i> ${userPosts.length} הודעות</span>
                         <span><i class="fa-solid fa-list"></i> ${topicsStarted} נושאים</span>
+                        <span class="reputation-badge"><i class="fa-solid fa-star"></i> ${reputation} מוניטין</span>
                     </div>
                 </div>
                 <div style="margin-right:auto; display:flex; gap:10px;">
@@ -5695,6 +5982,12 @@
             attachMentionSupport('new-topic-content');
             attachMentionSupport('reply-input');
             attachMentionSupport('edit-content');
+            attachLivePreview('new-topic-content');
+            attachLivePreview('reply-input');
+            attachLivePreview('edit-content');
+            attachSubmitOnCtrlEnter('new-topic-content', submitNewTopic);
+            attachSubmitOnCtrlEnter('reply-input', submitReply);
+            attachSubmitOnCtrlEnter('edit-content', saveEdit);
             fetchPosts();
             startAutoRefresh();
         };
